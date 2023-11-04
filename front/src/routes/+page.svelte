@@ -8,7 +8,10 @@
     //     toast("Hello world!");
     // });
     function hello() {
-        toast.success("Hello world");
+        fetch("/api").then(r => r.json()).then(r => {
+            toast.success(r[0].test);
+            console.log(r);
+        });
     }
 </script>
 
