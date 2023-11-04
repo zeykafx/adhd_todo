@@ -1,32 +1,77 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+import {Client as LibsqlClient, createClient} from "@libsql/client/web";
+import {Router, RouterType} from "itty-router";
 
 export interface Env {
-	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-	// MY_KV_NAMESPACE: KVNamespace;
-	//
-	// Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-	// MY_DURABLE_OBJECT: DurableObjectNamespace;
-	//
-	// Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-	// MY_BUCKET: R2Bucket;
-	//
-	// Example binding to a Service. Learn more at https://developers.cloudflare.com/workers/runtime-apis/service-bindings/
-	// MY_SERVICE: Fetcher;
-	//
-	// Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
-	// MY_QUEUE: Queue;
+    // The environment variable containing your the URL for your Turso database.
+    LIBSQL_DB_URL?: string;
+    // The Secret that contains the authentication token for your Turso database.
+    LIBSQL_DB_AUTH_TOKEN?: string;
+
+    // These objects are created before first use, then stashed here
+    // for future use
+    router?: RouterType;
 }
 
 export default {
-	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		return new Response('Hello World!');
-	},
+    async fetch(request: Request, env: Env): Promise<Response> {
+        if (env.router === undefined) {
+            env.router = buildRouter(env);
+        }
+
+        return env.router.handle(request);
+    },
 };
+
+function buildLibsqlClient(env: Env): LibsqlClient {
+    const url = env.LIBSQL_DB_URL?.trim();
+    if (url === undefined) {
+        throw new Error("LIBSQL_DB_URL env var is not defined");
+    }
+
+    const authToken = env.LIBSQL_DB_AUTH_TOKEN?.trim();
+    if (authToken === undefined) {
+        throw new Error("LIBSQL_DB_AUTH_TOKEN env var is not defined");
+    }
+
+    return createClient({url, authToken});
+}
+
+function buildRouter(env: Env): RouterType {
+    const router = Router();
+
+    router.get("/", async () => {
+        const client = buildLibsqlClient(env);
+        const rs = await client.execute("select * from example");
+        return Response.json(rs);
+    });
+
+    // router.get("/add-user", async (request) => {
+    // 	const client = buildLibsqlClient(env);
+    // 	const email = request.query.email;
+    // 	if (email === undefined) {
+    // 		return new Response("Missing email", { status: 400 });
+    // 	}
+    // 	if (typeof email !== "string") {
+    // 		return new Response("email must be a single string", { status: 400 });
+    // 	}
+    // 	if (email.length === 0) {
+    // 		return new Response("email length must be > 0", { status: 400 });
+    // 	}
+    //
+    // 	try {
+    // 		await client.execute({
+    // 			sql: "insert into example_users values (?)",
+    // 			args: [email],
+    // 		});
+    // 	} catch (e) {
+    // 		console.error(e);
+    // 		return new Response("database insert failed");
+    // 	}
+    //
+    // 	return new Response("Added");
+    // });
+
+    router.all("*", () => new Response("Not Found.", {status: 404}));
+
+    return router;
+}
