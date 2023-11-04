@@ -37,12 +37,28 @@ function buildLibsqlClient(env: Env): LibsqlClient {
 }
 
 function buildRouter(env: Env): RouterType {
+    let headers = {
+        "Content-Type": "application/json",
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Origin': '*',
+    };
+
     const router = Router();
+
+    router.options("*", () => new Response(null, {
+        status: 204, headers: {
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type'
+        }
+    }));
+
 
     router.get("/", async () => {
         const client = buildLibsqlClient(env);
         const rs = await client.execute("select * from example");
-        return Response.json(rs);
+        return Response.json(rs, {headers});
     });
 
     // router.get("/add-user", async (request) => {
