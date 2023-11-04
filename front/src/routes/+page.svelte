@@ -14,7 +14,7 @@
     <svelte:fragment slot="header">
         <AppBar>
             <svelte:fragment slot="lead">
-                <h1 class="h1 text-2xl font-bold">Magic Todo</h1>
+                <h1 class="h1 text-2xl font-bold">Focus Flow</h1>
             </svelte:fragment>
 
             <svelte:fragment slot="trail">
