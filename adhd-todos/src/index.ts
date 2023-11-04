@@ -1,5 +1,7 @@
 import {Client as LibsqlClient, createClient} from "@libsql/client/web";
 import {Router, RouterType} from "itty-router";
+import {type LibSQLDatabase, drizzle} from 'drizzle-orm/libsql';
+import {example} from "../drizzle/schema";
 
 export interface Env {
     // The environment variable containing your the URL for your Turso database.
@@ -22,7 +24,7 @@ export default {
     },
 };
 
-function buildLibsqlClient(env: Env): LibsqlClient {
+function buildLibsqlClient(env: Env): LibSQLDatabase {
     const url = env.LIBSQL_DB_URL?.trim();
     if (url === undefined) {
         throw new Error("LIBSQL_DB_URL env var is not defined");
@@ -33,7 +35,7 @@ function buildLibsqlClient(env: Env): LibsqlClient {
         throw new Error("LIBSQL_DB_AUTH_TOKEN env var is not defined");
     }
 
-    return createClient({url, authToken});
+    return drizzle(createClient({url, authToken}));
 }
 
 function buildRouter(env: Env): RouterType {
@@ -57,8 +59,17 @@ function buildRouter(env: Env): RouterType {
 
     router.get("/", async () => {
         const client = buildLibsqlClient(env);
-        const rs = await client.execute("select * from example");
+        const rs = await client.select().from(example).all();
         return Response.json(rs, {headers});
+    });
+
+    router.post("/add", async (request) => {
+        const client = buildLibsqlClient(env);
+        const body = await request.json() as { content: string };
+
+        let res = await client.insert(example).values({content: body.content}).returning();
+
+        return Response.json(res, {headers});
     });
 
     // router.get("/add-user", async (request) => {

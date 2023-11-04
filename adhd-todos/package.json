@@ -5,15 +5,22 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
-    "start": "wrangler dev"
+    "start": "wrangler dev",
+    "generate": "drizzle-kit generate:sqlite --out ./drizzle/migrations --breakpoints --schema=./drizzle/schema.ts",
+    "migrate": "tsx drizzle/migrate",
+    "studio": "drizzle-kit studio --port 3333"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20230419.0",
+    "dotenv": "^16.3.1",
+    "drizzle-kit": "^0.19.13",
+    "tsx": "^3.14.0",
     "typescript": "^5.0.4",
     "wrangler": "^3.0.0"
   },
   "dependencies": {
     "@libsql/client": "^0.3.6",
+    "drizzle-orm": "^0.28.6",
     "itty-router": "^4.0.23"
   }
 }

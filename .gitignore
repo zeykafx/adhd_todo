@@ -1,2 +1,3 @@
 ./adhd-todos/.dev.vars
 ./front/.dev.vars
+./adhd/.env
