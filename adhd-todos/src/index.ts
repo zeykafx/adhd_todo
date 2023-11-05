@@ -73,6 +73,15 @@ function buildRouter(env: Env): RouterType {
         return Response.json(res, {headers});
     });
 
+		router.put("/todos/edit", async (request) => {
+			const client = buildLibsqlClient(env);
+
+			const {id, content, done, updated_at} = await request.json() as { id: number, content: string, done: boolean, updated_at: string };
+
+			let res = await client.update(todos).set({content: content, done: done, updated_at: updated_at}).where(eq(todos.id, id)).returning();
+			return Response.json(res, {headers});
+		});
+
 		router.delete("/todos/delete", async (request) => {
 			const client = buildLibsqlClient(env);
 			const body = await request.json() as { id: number };

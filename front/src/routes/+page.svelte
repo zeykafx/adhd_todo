@@ -19,6 +19,9 @@
     import relativeTime from "dayjs/plugin/relativeTime";
     import {fade, slide} from "svelte/transition";
 
+    dayjs.extend(relativeTime)
+
+    // state
     let workerUrl = getWorkerUrl();
     let content = "";
     let todos: Array<Todo> = [];
@@ -34,6 +37,7 @@
         user_id: number;
     }
 
+    // methods
     function addTodo({id, content, created_at, updated_at, done, user_id}: {
         id: number,
         content: string,
@@ -64,7 +68,6 @@
         }).then(res => res.json()).then(res => {
             todos = [];
 
-            // parse the json
             for (let element of res) {
                 addTodo({
                     id: element.id,
@@ -75,27 +78,15 @@
                     user_id: element.user_id
                 });
             }
-            console.log("todos", todos);
-        });
-    }
-
-    function deleteFromDb(id: number) {
-        fetch(workerUrl + "/todos/delete", {
-            method: "DELETE",
-            body: JSON.stringify({id: id}),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        }).then(() => {
-            toast.success("Deleted from db");
-            todos = todos.filter(todo => todo.id !== id);
         });
     }
 
     function addToDb() {
+
         let done = false;
         let created_at = new Date().getTime().toString();
         let user_id = 1;
+
         fetch(workerUrl + "/todos/add", {
             method: "POST",
             body: JSON.stringify({content: content, done: done, created_at: created_at, user_id: user_id}),
@@ -103,7 +94,7 @@
                 "Content-Type": "application/json",
             },
         }).then(res => res.json()).then(res => {
-            toast.success("Added to db");
+            toast.success("Added Todo");
 
             // parse the json
             for (let element of res) {
@@ -122,7 +113,40 @@
         });
     }
 
-    dayjs.extend(relativeTime)
+    function deleteFromDb(id: number) {
+        fetch(workerUrl + "/todos/delete", {
+            method: "DELETE",
+            body: JSON.stringify({id: id}),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }).then(() => {
+            toast.success("Deleted Todo");
+            todos = todos.filter(todo => todo.id !== id);
+        });
+    }
+
+
+    function editInDb(id: number, content: string, done: boolean) {
+        let updated_at = new Date().getTime().toString();
+
+        fetch(workerUrl + "/todos/edit", {
+            method: "PUT",
+            body: JSON.stringify({id: id, content: content, done: done, updated_at: updated_at}),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }).then(() => {
+            toast.success("Edited Todo");
+            todos = todos.map(todo => {
+                if (todo.id === id) {
+                    todo.content = content;
+                    todo.done = done;
+                }
+                return todo;
+            });
+        });
+    }
 
 
     onMount(() => {
@@ -158,7 +182,10 @@
                                 component="div"
                                 name="todo-done"
                                 checked={todo.done}
-                                onChange={() => todo.done = !todo.done}
+                                onChange={() =>{
+                                    editInDb(todo.id, todo.content, !todo.done);
+                                    return todo.done = !todo.done;
+                                }}
                         />
 
                         <Button
@@ -220,8 +247,12 @@
         opened={deleteAlertOpen}
         onBackdropClick={() => (deleteAlertOpen = false)}
 >
-    <svelte:fragment slot="title">Delete Todo</svelte:fragment>
+    <svelte:fragment slot="title">
+        Delete Todo
+    </svelte:fragment>
+
     Are you sure you want to delete this todo?
+
     <svelte:fragment slot="buttons">
         <DialogButton onClick={() => (deleteAlertOpen = false)}>Cancel</DialogButton>
         <DialogButton strong onClick={() =>{
