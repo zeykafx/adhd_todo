@@ -1,8 +1,5 @@
-import {Client as LibsqlClient, createClient} from '@libsql/client/web';
 import {Router, RouterType} from 'itty-router';
-import {type LibSQLDatabase, drizzle} from 'drizzle-orm/libsql';
-import {example, todos} from '../drizzle/schema';
-import {eq} from 'drizzle-orm';
+import {addTodo, deleteTodo, editOrder, editTodo, getTodos} from "./todos/todos";
 
 export interface Env {
 	// The environment variable containing the URL for your Turso database.
@@ -25,21 +22,8 @@ export default {
 	},
 };
 
-function buildLibsqlClient(env: Env): LibSQLDatabase {
-	const url = env.LIBSQL_DB_URL?.trim();
-	if (url === undefined) {
-		throw new Error('LIBSQL_DB_URL env var is not defined');
-	}
-
-	const authToken = env.LIBSQL_DB_AUTH_TOKEN?.trim();
-	if (authToken === undefined) {
-		throw new Error('LIBSQL_DB_AUTH_TOKEN env var is not defined');
-	}
-
-	return drizzle(createClient({url, authToken}));
-}
-
 function buildRouter(env: Env): RouterType {
+
 	let headers = {
 		'Content-Type': 'application/json',
 		'Access-Control-Allow-Credentials': 'true',
@@ -62,66 +46,15 @@ function buildRouter(env: Env): RouterType {
 			})
 	);
 
-	router.get('/todos/get', async () => {
-		const client = buildLibsqlClient(env);
-		const rs = await client.select().from(todos).all();
-		return Response.json(rs, {headers});
-	});
+	router.get('/todos/get', () => getTodos(headers, env));
 
-	router.post('/todos/add', async (request) => {
-		const client = buildLibsqlClient(env);
+	router.post('/todos/add', (request) => addTodo(headers, env, request));
 
-		const {order, content, done, created_at, user_id} = (await request.json()) as {
-			order: number;
-			content: string;
-			done: boolean;
-			created_at: string;
-			user_id: number;
-		};
+	router.put('/todos/edit',  (request) => editTodo(headers, env, request));
+	router.put('/todos/editOrder', (request) => editOrder(headers, env, request));
 
-		let res = await client
-			.insert(todos)
-			.values({
-				order: order,
-				content: content,
-				done: done,
-				created_at: created_at,
-				updated_at: created_at,
-				user_id: user_id
-			})
-			.returning();
+	router.delete('/todos/delete', (request) => deleteTodo(headers, env, request));
 
-		return Response.json(res, {headers});
-	});
-
-	router.put('/todos/edit', async (request) => {
-		const client = buildLibsqlClient(env);
-
-		const {id, order, content, done, updated_at} = (await request.json()) as {
-			id: number;
-			order: number,
-			content: string;
-			done: boolean;
-			updated_at: string
-		};
-
-		let res = await client.update(todos).set({
-			order: order,
-			content: content,
-			done: done,
-			updated_at: updated_at
-		}).where(eq(todos.id, id)).returning();
-		return Response.json(res, {headers});
-	});
-
-	router.delete('/todos/delete', async (request) => {
-		const client = buildLibsqlClient(env);
-		const body = (await request.json()) as { id: number };
-
-		let res = await client.delete(todos).where(eq(todos.id, body.id)).returning();
-
-		return Response.json(res, {headers});
-	});
 
 
 	router.all('*', () => new Response('Not Found.', {status: 404}));

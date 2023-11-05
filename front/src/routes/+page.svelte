@@ -85,8 +85,6 @@
                 });
             }
 
-            console.log(todos);
-
             todos = todos.sort((a, b) => {
                 return a.order - b.order;
             });
@@ -190,14 +188,37 @@
         todos = e.detail.items;
     }
 
+    function editOrder() {
+        fetch(workerUrl + "/todos/editOrder", {
+            method: "PUT",
+            body: JSON.stringify({
+                reqTodos: todos
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        }).then((res) => res.json()).then((res) => {
+            // toast.success("Edited to do");
+
+            for (let element of res) {
+                todos = todos.map(todo => {
+                    if (todo.id === element.id) {
+                        todo.order = element.order;
+                    }
+                    return todo;
+                });
+            }
+
+            todos = todos.sort((a, b) => {
+                return a.order - b.order;
+            });
+        });
+    }
+
     function handleDndFinalize(e: CustomEvent<DndEvent<Todo>>) {
         todos = e.detail.items;
 
-        // edit the order of all the todos in the db
-        for (let index = 0; index < todos.length; index++) {
-            const todo = todos[index];
-            editInDb(todo.id, index, todo.content, todo.done);
-        }
+        editOrder();
     }
 
     onMount(() => {
@@ -222,96 +243,101 @@
 
 
 <Page>
-    <Navbar title="Focus Flow"/>
+    <Navbar title="Pomofocus"/>
 
-    <Block>
-        <BlockTitle>To do</BlockTitle>
+    <div class="w-full flex flex-col items-center justify-center max-w-screen-lg mx-auto">
+        <div class="w-full">
 
-        <List>
+        <Block>
+            <BlockTitle>New Todo</BlockTitle>
+
+            <List>
+                <div class="flex flex-row gap-2 items-center justify-center">
+                    <ListInput
+                            id="input_field"
+                            class="w-full"
+                            outline
+                            label="Content"
+                            type="text"
+                            placeholder="Content"
+                            floatingLabel
+                            value={content}
+                            onInput={(e) => content = e.target.value}
+                    />
+                    <Button rounded onClick={addToDb} class="w-min mx-auto mt-2">
+                        Add
+                    </Button>
+                </div>
+            </List>
+        </Block>
 
 
-            <section
-                    class="w-full h-full overflow-hidden border border-md-light-primary/20 dark:border-md-dark-primary/20 rounded-xl transition-all"
-                    use:dndzone="{{items: todos, flipDurationMs, dropTargetStyle}}"
-                    on:consider={handleDndConsider}
-                    on:finalize={handleDndFinalize}
-            >
-                {#each todos as todo(todo.id)}
-                    <div animate:flip="{{duration:flipDurationMs}}">
-                        <ListItem
-                                label
-                                title={todo.content}
-                                titleWrapClass={todo.done ? "line-through text-black/50 dark:text-white/50" : ""}
-                                text={dayjs(todo.created_at).fromNow()}
-                        >
-                            <Checkbox
-                                    slot="media"
-                                    component="div"
-                                    name="todo-done"
-                                    checked={todo.done}
-                                    onChange={() =>{
+        <Block>
+            <BlockTitle>Todo list</BlockTitle>
+
+            <List strong class="rounded-xl">
+                <section
+                        class="w-full h-full overflow-hidden border border-md-light-primary/20 dark:border-md-dark-primary/20 rounded-xl transition-all"
+                        use:dndzone="{{items: todos, flipDurationMs, dropTargetStyle}}"
+                        on:consider={handleDndConsider}
+                        on:finalize={handleDndFinalize}
+                >
+                    {#each todos as todo(todo.id)}
+                        <div animate:flip="{{duration:flipDurationMs}}">
+                            <ListItem
+                                    label
+                                    title={todo.content}
+                                    titleWrapClass={todo.done ? "line-through text-black/50 dark:text-white/50" : ""}
+                                    text={dayjs(todo.created_at).fromNow()}
+                            >
+                                <Checkbox
+                                        slot="media"
+                                        component="div"
+                                        name="todo-done"
+                                        checked={todo.done}
+                                        onChange={() =>{
                                         let order = todos.findIndex(t => t.id === todo.id);
                                         editInDb(todo.id, order, todo.content, !todo.done);
                                         return todo.done = !todo.done;
                                     }}
-                            />
+                                />
 
-                            <Button
-                                    slot="after"
-                                    clear
-                                    small
-                                    rounded
-                                    onClick={() =>{
+                                <Button
+                                        slot="after"
+                                        clear
+                                        small
+                                        rounded
+                                        onClick={() =>{
                                         todoToDelete = todo;
                                         deleteAlertOpen = true;
                                     }}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                     fill="none"
-                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                     stroke-linejoin="round"
-                                     class="lucide lucide-trash-2">
-                                    <path d="M3 6h18"/>
-                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-                                    <line x1="10" x2="10" y1="11" y2="17"/>
-                                    <line x1="14" x2="14" y1="11" y2="17"/>
-                                </svg>
-                            </Button>
-                        </ListItem>
-                    </div>
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                         fill="none"
+                                         stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                         stroke-linejoin="round"
+                                         class="lucide lucide-trash-2">
+                                        <path d="M3 6h18"/>
+                                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                                        <line x1="10" x2="10" y1="11" y2="17"/>
+                                        <line x1="14" x2="14" y1="11" y2="17"/>
+                                    </svg>
+                                </Button>
+                            </ListItem>
+                        </div>
 
-                {:else}
-                    <ListItem title="Nothing to do!"/>
-                {/each}
-            </section>
-        </List>
+                    {:else}
+                        <ListItem title="Nothing to do!"/>
+                    {/each}
+                </section>
+            </List>
 
-    </Block>
+        </Block>
+        </div>
 
-    <Block>
-        <BlockTitle>New Todo</BlockTitle>
+    </div>
 
-        <List>
-            <div class="flex flex-row gap-2 items-center justify-center">
-                <ListInput
-                        id="input_field"
-                        class="w-full"
-                        outline
-                        label="Content"
-                        type="text"
-                        placeholder="Content"
-                        floatingLabel
-                        value={content}
-                        onInput={(e) => content = e.target.value}
-                />
-                <Button rounded onClick={addToDb} class="w-min mx-auto mt-2">
-                    Add
-                </Button>
-            </div>
-
-        </List>
-    </Block>
 </Page>
 
 <Dialog
