@@ -13,11 +13,11 @@
         Dialog,
         DialogButton
     } from 'konsta/svelte';
-    import {onMount} from "svelte";
+    import {onMount, SvelteComponent} from "svelte";
     import {getWorkerUrl} from "$lib";
     import dayjs from "dayjs";
     import relativeTime from "dayjs/plugin/relativeTime";
-    import {fade, slide} from "svelte/transition";
+    import {slide} from "svelte/transition";
 
     dayjs.extend(relativeTime)
 
@@ -137,7 +137,7 @@
                 "Content-Type": "application/json",
             },
         }).then(() => {
-            toast.success("Edited Todo");
+            // toast.success("Edited to do");
             todos = todos.map(todo => {
                 if (todo.id === id) {
                     todo.content = content;
@@ -152,6 +152,13 @@
     onMount(() => {
         fetchDbContents();
 
+        // add event listener for enter key
+        document.getElementById("input_field")?.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                addToDb();
+            }
+        });
+
         const interval = setInterval(() => {
             console.log("refreshing todos");
             todos = todos;
@@ -159,6 +166,7 @@
 
         return () => clearInterval(interval);
     });
+
 </script>
 
 
@@ -225,6 +233,7 @@
         <List>
             <div class="flex flex-row gap-2 items-center justify-center">
                 <ListInput
+                        id="input_field"
                         class="w-full"
                         outline
                         label="Content"
