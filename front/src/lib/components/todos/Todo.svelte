@@ -25,6 +25,7 @@
 
     // state
     let workerUrl = getWorkerUrl();
+	let fetchingTodos = false;
     let todos: Array<Todo> = [];
 
     let deleteAlertOpen = false;
@@ -76,12 +77,19 @@
     }
 
     function fetchDbContents() {
+		if (fetchingTodos) return;
+
+
+		let userToken = $authStore.user?.getIdToken();
+
         fetch(workerUrl + "/todos/get", {
-            method: "GET",
+            method: "POST",
+			body: JSON.stringify({user_id: $authStore.user?.uid!}),
             headers: {
                 "Content-Type": "application/json",
+				"Authorization": "Bearer " + userToken,
             },
-        }).then(res => res.json()).then(res => {
+        }).then((res) => res.json()).then((res) => {
             todos = [];
 
             for (let element of res) {
@@ -95,19 +103,18 @@
                     user_id: element.user_id
                 });
             }
-
-            todos = todos.sort((a, b) => {
-                return a.order - b.order;
-            });
         });
     }
 
     function deleteFromDb(id: number) {
+		let userToken = $authStore.user?.getIdToken();
+
         fetch(workerUrl + "/todos/delete", {
             method: "DELETE",
-            body: JSON.stringify({id: id}),
+            body: JSON.stringify({id: id, user_id: $authStore.user?.uid!}),
             headers: {
                 "Content-Type": "application/json",
+				"Authorization": "Bearer " + userToken,
             },
         }).then(() => {
             toast.success("Deleted Todo");
@@ -117,6 +124,7 @@
 
     function editInDb(id: number, order: number, content: string, done: boolean) {
         let updated_at = new Date().getTime().toString();
+		let userToken = $authStore.user?.getIdToken();
 
         fetch(workerUrl + "/todos/edit", {
             method: "PUT",
@@ -126,9 +134,11 @@
                 content: content,
                 done: done,
                 updated_at: updated_at,
+				user_id: $authStore.user?.uid!
             }),
             headers: {
                 "Content-Type": "application/json",
+				"Authorization": "Bearer " + userToken,
             },
         }).then((res) => res.json()).then((res) => {
             // toast.success("Edited to do");
@@ -148,13 +158,17 @@
     }
 
     function editOrder() {
+		let userToken = $authStore.user?.getIdToken();
+
         fetch(workerUrl + "/todos/editOrder", {
             method: "PUT",
             body: JSON.stringify({
-                reqTodos: todos
+                reqTodos: todos,
+				user_id: $authStore.user?.uid!
             }),
             headers: {
                 "Content-Type": "application/json",
+				"Authorization": "Bearer " + userToken,
             },
         }).then((res) => res.json()).then((res) => {
             // toast.success("Edited to do");
@@ -190,8 +204,14 @@
         editOrder();
     }
 
+	$: {
+		if ($authStore.isLoggedIn) {
+			fetchDbContents();
+			fetchingTodos = true;
+		}
+	}
+
     onMount(() => {
-        fetchDbContents();
 
         // refresh the state of the todos every 60 seconds, this doesn't fetch from the db but it just
         // updates the time ago string

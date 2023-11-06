@@ -27,6 +27,7 @@ function buildRouter(env: Env): RouterType {
 		'Content-Type': 'application/json',
 		'Access-Control-Allow-Credentials': 'true',
 		'Access-Control-Allow-Origin': '*',
+		'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 	};
 
 	const router = Router();
@@ -37,15 +38,15 @@ function buildRouter(env: Env): RouterType {
 			new Response(null, {
 				status: 204,
 				headers: {
-					'Access-Control-Allow-Credentials': 'true',
 					'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 					'Access-Control-Allow-Origin': '*',
-					'Access-Control-Allow-Headers': 'Content-Type',
+					'Access-Control-Allow-Credentials': 'true',
+					'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 				},
 			})
 	);
 
-	router.get('/todos/get', () => getTodos(headers, env));
+	router.post('/todos/get', (request) => getTodos(headers, env, request));
 
 	router.post('/todos/add', (request) => addTodo(headers, env, request));
 

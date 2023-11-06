@@ -41,6 +41,7 @@
 		}
 
 		let user_id = $authStore.user?.uid!;
+				let userToken = $authStore.user?.getIdToken();
 
 		let done = false;
 		let created_at = new Date().getTime().toString();
@@ -57,6 +58,7 @@
 			}),
 			headers: {
 				"Content-Type": "application/json",
+				"Authorization": "Bearer " + userToken,
 			},
 		})
 			.then((res) => res.json())
