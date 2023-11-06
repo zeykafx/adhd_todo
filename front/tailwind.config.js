@@ -2,6 +2,7 @@ const konstaConfig = require('konsta/config');
 
 /** @type {import('tailwindcss').Config} */
 export default konstaConfig({
+    darkMode: "class",
     konsta: {
         colors: {
             // "primary" is the main app color, if not specified will be default to '#007aff'

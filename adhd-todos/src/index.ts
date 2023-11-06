@@ -1,5 +1,5 @@
-import {Router, RouterType} from 'itty-router';
-import {addTodo, deleteTodo, editOrder, editTodo, getTodos} from "./todos/todos";
+import { Router, RouterType } from 'itty-router';
+import { addTodo, deleteTodo, editOrder, editTodo, getTodos } from './todos/todos';
 
 export interface Env {
 	// The environment variable containing the URL for your Turso database.
@@ -23,7 +23,6 @@ export default {
 };
 
 function buildRouter(env: Env): RouterType {
-
 	let headers = {
 		'Content-Type': 'application/json',
 		'Access-Control-Allow-Credentials': 'true',
@@ -50,14 +49,12 @@ function buildRouter(env: Env): RouterType {
 
 	router.post('/todos/add', (request) => addTodo(headers, env, request));
 
-	router.put('/todos/edit',  (request) => editTodo(headers, env, request));
+	router.put('/todos/edit', (request) => editTodo(headers, env, request));
 	router.put('/todos/editOrder', (request) => editOrder(headers, env, request));
 
 	router.delete('/todos/delete', (request) => deleteTodo(headers, env, request));
 
-
-
-	router.all('*', () => new Response('Not Found.', {status: 404}));
+	router.all('*', () => new Response('Not Found.', { status: 404 }));
 
 	return router;
 }

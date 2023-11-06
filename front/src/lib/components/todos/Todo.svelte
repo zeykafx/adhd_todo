@@ -11,7 +11,7 @@
         DialogButton,
         Popover
     } from 'konsta/svelte';
-    import {onMount, SvelteComponent} from "svelte";
+    import {onMount} from "svelte";
     import {getWorkerUrl} from "$lib";
     import dayjs from "dayjs";
     import relativeTime from "dayjs/plugin/relativeTime";
@@ -19,6 +19,7 @@
     import {dndzone, type DndEvent} from "svelte-dnd-action";
     import TodoInput from "$lib/components/todos/TodoInput.svelte";
     import clsx from "clsx";
+	import authStore from "$lib/firebase/firebase";
 
     dayjs.extend(relativeTime)
 
@@ -58,7 +59,7 @@
         created_at: string,
         updated_at: string,
         done: boolean,
-        user_id: number
+		user_id: number
     }) {
         let created_at_date: Date = new Date(parseInt(created_at));
         let updated_at_date: Date = new Date(parseInt(updated_at));
@@ -133,7 +134,7 @@
             // toast.success("Edited to do");
             for (let rElem of res) {
                 todos = todos.map(todo => {
-             
+
                     if (todo.id === rElem.id) {
                         todo.order = rElem.order;
                         todo.content = rElem.content;
@@ -199,6 +200,11 @@
             todos = todos;
         }, 60000);
 
+		// set the drop target style based on the theme
+		dropTargetStyle = {
+			"border-color": window.theme === "dark" ? "rgb(var(--k-color-md-dark-primary))" : "rgb(var(--k-color-md-light-primary))",
+		};
+
         return () => clearInterval(interval);
     });
 </script>
@@ -208,7 +214,6 @@
     <div class="w-full">
 
         <TodoInput todos={todos} addTodo={addTodo} workerUrl={workerUrl}/>
-
 
         <Block>
             <BlockTitle>Todo list</BlockTitle>

@@ -26,6 +26,11 @@ declare global {
 			) => void;
 		}
 	}
+
+	declare interface Window {
+		setMode: (string) => void,
+		theme: "dark" | "light",
+	}
 }
 
 export {};
