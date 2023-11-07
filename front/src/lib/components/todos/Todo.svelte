@@ -21,15 +21,12 @@
 	import TodoInput from "$lib/components/todos/TodoInput.svelte";
 	import clsx from "clsx";
 	import authStore from "$lib/firebase/firebase";
+	import todosStore, {type Todo, addTodo} from "./todosStore";
 
 	dayjs.extend(relativeTime);
+	let workerUrl = getWorkerUrl();
 
 	// state
-	let workerUrl = getWorkerUrl();
-	let fetchingTodos = false;
-	let loading = false;
-	let todos: Array<Todo> = [];
-
 	let deleteAlertOpen = false;
 	let todoToDelete: Todo | null = null;
 
@@ -44,55 +41,11 @@
 		popoverOpened = true;
 	};
 
-	interface Todo {
-		id: number;
-		order: number;
-		content: string;
-		created_at: Date;
-		updated_at: Date;
-		done: boolean;
-		user_id: number;
-	}
-
-	// methods
-	function addTodo({
-		id,
-		order,
-		content,
-		created_at,
-		updated_at,
-		done,
-		user_id,
-	}: {
-		id: number;
-		order: number;
-		content: string;
-		created_at: string;
-		updated_at: string;
-		done: boolean;
-		user_id: number;
-	}) {
-		let created_at_date: Date = new Date(parseInt(created_at));
-		let updated_at_date: Date = new Date(parseInt(updated_at));
-
-		todos = [
-			...todos,
-			{
-				id: id,
-				order: order,
-				content: content,
-				done: done,
-				created_at: created_at_date,
-				updated_at: updated_at_date,
-				user_id: user_id,
-			},
-		];
-	}
 
 	async function fetchDbContents() {
-		if (fetchingTodos) return;
+		if ($todosStore.fetchedOnce) return;
 
-		loading = true;
+		$todosStore.loading = true;
 
 		let userToken = await $authStore.user?.getIdToken();
 
@@ -106,7 +59,7 @@
 		})
 			.then((res) => res.json())
 			.then((res) => {
-				todos = [];
+				$todosStore.todos = [];
 
 				for (let element of res) {
 					addTodo({
@@ -120,7 +73,7 @@
 					});
 				}
 
-				loading = false;
+				$todosStore.loading = false;
 			});
 	}
 
@@ -136,7 +89,7 @@
 			},
 		}).then(() => {
 			toast.success("Deleted Todo");
-			todos = todos.filter((todo) => todo.id !== id);
+			$todosStore.todos = $todosStore.todos.filter((todo) => todo.id !== id);
 		});
 	}
 
@@ -168,7 +121,7 @@
 			.then((res) => {
 				// toast.success("Edited to do");
 				for (let rElem of res) {
-					todos = todos.map((todo) => {
+					$todosStore.todos = $todosStore.todos.map((todo) => {
 						if (todo.id === rElem.id) {
 							todo.order = rElem.order;
 							todo.content = rElem.content;
@@ -186,7 +139,7 @@
 		fetch(workerUrl + "/todos/editOrder", {
 			method: "PUT",
 			body: JSON.stringify({
-				reqTodos: todos,
+				reqTodos: $todosStore.todos,
 				user_id: $authStore.user?.uid!,
 			}),
 			headers: {
@@ -199,7 +152,7 @@
 				// toast.success("Edited to do");
 
 				for (let element of res) {
-					todos = todos.map((todo) => {
+					$todosStore.todos = $todosStore.todos.map((todo) => {
 						if (todo.id === element.id) {
 							todo.order = element.order;
 						}
@@ -207,9 +160,6 @@
 					});
 				}
 
-				todos = todos.sort((a, b) => {
-					return a.order - b.order;
-				});
 			});
 	}
 
@@ -220,11 +170,11 @@
 	};
 
 	function handleDndConsider(e: CustomEvent<DndEvent<Todo>>) {
-		todos = e.detail.items;
+		$todosStore.todos = e.detail.items;
 	}
 
 	function handleDndFinalize(e: CustomEvent<DndEvent<Todo>>) {
-		todos = e.detail.items;
+		$todosStore.todos = e.detail.items;
 
 		editOrder();
 	}
@@ -232,7 +182,7 @@
 	$: {
 		if ($authStore.isLoggedIn) {
 			fetchDbContents();
-			fetchingTodos = true;
+			$todosStore.fetchedOnce = true;
 		}
 	}
 
@@ -241,7 +191,7 @@
 		// updates the time ago string
 		const interval = setInterval(() => {
 			console.log("refreshing todos");
-			todos = todos;
+			$todosStore.todos = $todosStore.todos;
 		}, 60000);
 
 		// set the drop target style based on the theme
@@ -260,7 +210,7 @@
 	class="w-full flex flex-col items-center justify-center max-w-screen-lg mx-auto px-4"
 >
 	<div class="w-full">
-		<TodoInput {todos} {addTodo} {workerUrl} />
+		<TodoInput {workerUrl} />
 
 		<Block>
 			<BlockTitle>Todo list</BlockTitle>
@@ -269,14 +219,14 @@
 				<section
 					class="w-full h-full overflow-hidden border border-md-light-primary/20 dark:border-md-dark-primary/20 rounded-xl transition-all"
 					use:dndzone={{
-						items: todos,
+						items: $todosStore.todos,
 						flipDurationMs,
 						dropTargetStyle,
 					}}
 					on:consider={handleDndConsider}
 					on:finalize={handleDndFinalize}
 				>
-					{#each todos as todo (todo.id)}
+					{#each $todosStore.todos as todo (todo.id)}
 						<div animate:flip={{ duration: flipDurationMs }}>
 							<ListItem
 								label={editingTodo !== todo}
@@ -300,6 +250,9 @@
 									)}
 									contenteditable={editingTodo === todo}
 									bind:this={editingTodoElem}
+									on:dblclick={() => {
+										editingTodo = todo;
+									}}
 									on:keypress={(e) => {
 										if (
 											e.code === "Enter" &&
@@ -326,7 +279,7 @@
 									name="todo-done"
 									checked={todo.done}
 									onChange={() => {
-										let order = todos.findIndex(
+										let order = $todosStore.todos.findIndex(
 											(t) => t.id === todo.id
 										);
 										editInDb(
@@ -407,8 +360,10 @@
 							</ListItem>
 						</div>
 					{:else}
-						{#if loading || !$authStore.isLoggedIn}
-							<div class="flex flex-col items-center justify-center p-10">
+						{#if $todosStore.loading || !$authStore.isLoggedIn}
+							<div
+								class="flex flex-col items-center justify-center p-10"
+							>
 								<Preloader />
 								<ListItem title="Loading..." />
 							</div>
@@ -431,9 +386,9 @@
 	Are you sure you want to delete this todo?
 
 	<svelte:fragment slot="buttons">
-		<DialogButton onClick={() => (deleteAlertOpen = false)}
-			>Cancel</DialogButton
-		>
+		<DialogButton onClick={() => (deleteAlertOpen = false)}>
+			Cancel
+		</DialogButton>
 		<DialogButton
 			strong
 			onClick={() => {
@@ -463,7 +418,7 @@
 					let todoId = parseInt(
 						popoverTargetEl.replace(".todo_", "")
 					);
-					let todo = todos.find((todo) => todo.id === todoId);
+					let todo = $todosStore.todos.find((todo) => todo.id === todoId);
 
 					if (todo !== undefined) {
 						editingTodo = todo;
@@ -500,7 +455,7 @@
 						popoverTargetEl.replace(".todo_", "")
 					);
 					deleteAlertOpen = true;
-					let todo = todos.find((todo) => todo.id === todoId);
+					let todo = $todosStore.todos.find((todo) => todo.id === todoId);
 					if (todo !== undefined) {
 						todoToDelete = todo;
 					}

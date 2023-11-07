@@ -46,7 +46,7 @@
 
 <Navbar>
 	<div slot="title">
-		<a href="/" class="text-xl font-bold"> Pomofocus </a>
+		<a href="/" class="text-xl font-bold">Pomofocus</a>
 	</div>
 
 	<div slot="right" class="flex flex-row gap-4 items-center justify-center">

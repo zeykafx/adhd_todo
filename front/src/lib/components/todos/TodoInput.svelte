@@ -3,28 +3,9 @@
 	import { Block, BlockTitle, Button, List, ListInput } from "konsta/svelte";
 	import toast from "svelte-french-toast";
 	import authStore from "$lib/firebase/firebase";
+	import todosStore, {addTodo} from "./todosStore";
 
-	interface Todo {
-		id: number;
-		order: number;
-		content: string;
-		created_at: Date;
-		updated_at: Date;
-		done: boolean;
-		user_id: number;
-	}
-
-	export let todos: Todo[];
 	export let workerUrl: string;
-	export let addTodo: (todo: {
-		id: number;
-		order: number;
-		content: string;
-		created_at: string;
-		updated_at: string;
-		done: boolean;
-		user_id: number;
-	}) => void;
 
 	// state
 	let content = "";
@@ -45,7 +26,7 @@
 
 		let done = false;
 		let created_at = new Date().getTime().toString();
-		let order = todos.length + 1;
+		let order = $todosStore.todos.length + 1;
 
 		fetch(workerUrl + "/todos/add", {
 			method: "POST",
