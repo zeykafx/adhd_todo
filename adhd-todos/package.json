@@ -21,6 +21,7 @@
   "dependencies": {
     "@libsql/client": "^0.3.6",
     "drizzle-orm": "^0.28.6",
-    "itty-router": "^4.0.23"
+    "itty-router": "^4.0.23",
+    "web-auth-library": "^1.0.3"
   }
 }

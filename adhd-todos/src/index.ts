@@ -6,6 +6,7 @@ export interface Env {
 	LIBSQL_DB_URL?: string;
 	// The Secret that contains the authentication token for your Turso database.
 	LIBSQL_DB_AUTH_TOKEN?: string;
+	GOOGLE_CLOUD_CREDENTIALS?: string;
 
 	// These objects are created before first use, then stashed here
 	// for future use
@@ -23,6 +24,10 @@ export default {
 };
 
 function buildRouter(env: Env): RouterType {
+	if (env.GOOGLE_CLOUD_CREDENTIALS === undefined) {
+		throw new Error('GOOGLE_CLOUD_CREDENTIALS is not defined.');
+	}
+
 	let headers = {
 		'Content-Type': 'application/json',
 		'Access-Control-Allow-Credentials': 'true',

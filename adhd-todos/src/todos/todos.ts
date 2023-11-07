@@ -2,6 +2,7 @@ import buildLibsqlClient from '../db';
 import { todos } from '../../drizzle/schema';
 import { Env } from '../index';
 import { eq, sql } from 'drizzle-orm';
+let { verifyIdToken } = require('web-auth-library/google');
 
 interface Todo {
 	id: number;
@@ -11,6 +12,25 @@ interface Todo {
 	updated_at: Date;
 	done: boolean;
 	user_id: number;
+}
+
+async function verifyHeaderToken(env: Env, request: Request, headers: Record<string, string>) {
+	// parse the user token from the headers
+	let authorizationHeader = request.headers.get("Authorization");
+
+	if (authorizationHeader === null) {
+		return Response.json({ error: 'Authorization header is undefined' }, { headers });
+	}
+
+	let idToken = authorizationHeader.split(' ')[1];
+
+	let token;
+	try {
+		token = await verifyIdToken({idToken, env: env, waitUntil: () => new Promise((resolve) => setTimeout(resolve, 1000 * 60 * 60 * 24 * 365 * 10))});
+	} catch (err) {
+		console.log(err);
+		return Response.json({ error: 'Invalid token' }, { headers });
+	}
 }
 
 export async function getTodos(headers: Record<string, string>, env: Env, request: Request) {
@@ -23,6 +43,8 @@ export async function getTodos(headers: Record<string, string>, env: Env, reques
 	if (user_id === undefined) {
 		return Response.json({ error: 'user_id is undefined' }, { headers });
 	}
+
+	verifyHeaderToken(env, request, headers);
 
 	const rs = await client.select().from(todos).where(eq(todos.user_id, user_id)).orderBy(todos.order);
 
@@ -39,6 +61,8 @@ export async function addTodo(headers: Record<string, string>, env: Env, request
 		created_at: string;
 		user_id: string;
 	};
+
+	verifyHeaderToken(env, request, headers);
 
 	let res = await client
 		.insert(todos)
@@ -58,6 +82,8 @@ export async function addTodo(headers: Record<string, string>, env: Env, request
 export async function deleteTodo(headers: Record<string, string>, env: Env, request: Request) {
 	const client = buildLibsqlClient(env);
 	const { id, user_id } = (await request.json()) as { id: number; user_id: string };
+
+	verifyHeaderToken(env, request, headers);
 
 	let res = await client
 		.delete(todos)
@@ -79,6 +105,8 @@ export async function editTodo(headers: Record<string, string>, env: Env, reques
 		user_id: string;
 	};
 
+	verifyHeaderToken(env, request, headers);
+
 	let res = await client
 		.update(todos)
 		.set({
@@ -99,6 +127,8 @@ export async function editOrder(headers: Record<string, string>, env: Env, reque
 		reqTodos: Todo[];
 		user_id: string;
 	};
+
+	verifyHeaderToken(env, request, headers);
 
 	let retArr = [];
 

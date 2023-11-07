@@ -76,11 +76,11 @@
         }];
     }
 
-    function fetchDbContents() {
+    async function fetchDbContents() {
 		if (fetchingTodos) return;
 
 
-		let userToken = $authStore.user?.getIdToken();
+		let userToken = await $authStore.user?.getIdToken();
 
         fetch(workerUrl + "/todos/get", {
             method: "POST",
@@ -106,8 +106,8 @@
         });
     }
 
-    function deleteFromDb(id: number) {
-		let userToken = $authStore.user?.getIdToken();
+    async function deleteFromDb(id: number) {
+		let userToken = await $authStore.user?.getIdToken();
 
         fetch(workerUrl + "/todos/delete", {
             method: "DELETE",
@@ -122,9 +122,9 @@
         });
     }
 
-    function editInDb(id: number, order: number, content: string, done: boolean) {
+    async function editInDb(id: number, order: number, content: string, done: boolean) {
         let updated_at = new Date().getTime().toString();
-		let userToken = $authStore.user?.getIdToken();
+		let userToken = await $authStore.user?.getIdToken();
 
         fetch(workerUrl + "/todos/edit", {
             method: "PUT",
@@ -157,8 +157,8 @@
         });
     }
 
-    function editOrder() {
-		let userToken = $authStore.user?.getIdToken();
+    async function editOrder() {
+		let userToken = await $authStore.user?.getIdToken();
 
         fetch(workerUrl + "/todos/editOrder", {
             method: "PUT",

@@ -29,7 +29,7 @@
 	// state
 	let content = "";
 
-	function addToDb() {
+	async function addToDb() {
 		if (content.trim() === "") {
 			toast.error("Enter a todo");
 			return;
@@ -41,7 +41,7 @@
 		}
 
 		let user_id = $authStore.user?.uid!;
-				let userToken = $authStore.user?.getIdToken();
+		let userToken = await $authStore.user?.getIdToken();
 
 		let done = false;
 		let created_at = new Date().getTime().toString();
@@ -58,7 +58,7 @@
 			}),
 			headers: {
 				"Content-Type": "application/json",
-				"Authorization": "Bearer " + userToken,
+				Authorization: "Bearer " + userToken,
 			},
 		})
 			.then((res) => res.json())
@@ -84,11 +84,13 @@
 
 	onMount(() => {
 		// add event listener for enter key
-		document.getElementById("input_field")?.addEventListener("keydown", (e) => {
-			if (e.key === "Enter") {
-				addToDb();
-			}
-		});
+		document
+			.getElementById("input_field")
+			?.addEventListener("keydown", (e) => {
+				if (e.key === "Enter") {
+					addToDb();
+				}
+			});
 	});
 </script>
 
@@ -108,7 +110,9 @@
 				value={content}
 				onInput={(e) => (content = e.target.value)}
 			/>
-			<Button rounded onClick={addToDb} class="w-min mx-auto mt-2">Add</Button>
+			<Button rounded onClick={addToDb} class="w-min mx-auto mt-2"
+				>Add</Button
+			>
 		</div>
 	</List>
 </Block>
