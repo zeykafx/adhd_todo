@@ -88,11 +88,13 @@
 				"Content-Type": "application/json",
 				Authorization: "Bearer " + userToken,
 			},
-		}).then(() => {
+		}).then((res) => res.json()).then((res) => {
 			toast.success("Deleted Todo");
-			$todosStore.todos = $todosStore.todos.filter(
-				(todo) => todo.id !== id
-			);
+			for (let element of res) {
+				$todosStore.todos = $todosStore.todos.filter(
+					(todo) => todo.id !== element.id
+				);
+			}
 		});
 	}
 

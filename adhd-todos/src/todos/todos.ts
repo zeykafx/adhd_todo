@@ -68,19 +68,23 @@ export async function deleteTodo(headers: Record<string, string>, env: Env, requ
 	const client = buildLibsqlClient(env);
 	const { id, user_id } = (await request.json()) as { id: number; user_id: string };
 
+	let retArr: any = [];
 	let res = await client
 		.delete(todos)
 		.where(sql`${todos.id} = ${id} and ${todos.user_id} = ${user_id}`)
 		.returning();
 
+	retArr.push(res[0]);
+
 	// check if the todo had subtasks
 	let subtasks = await client.select().from(todos).where(sql`${todos.parent_id} = ${id}`);
 	if (subtasks.length > 0) {
 		// delete all the subtasks
-		await client.delete(todos).where(sql`${todos.parent_id} = ${id}`).returning();
+		let locRes = await client.delete(todos).where(sql`${todos.parent_id} = ${id}`).returning();
+		retArr.push(locRes[0]);
 	}
 
-	return Response.json(res, { headers });
+	return Response.json(retArr, { headers });
 }
 
 /*
@@ -98,6 +102,7 @@ export async function editTodo(headers: Record<string, string>, env: Env, reques
 		user_id: string;
 	};
 
+	let retArr: any = [];
 	let res = await client
 		.update(todos)
 		.set({
@@ -108,7 +113,28 @@ export async function editTodo(headers: Record<string, string>, env: Env, reques
 		})
 		.where(sql`${todos.id} = ${id} and ${todos.user_id} = ${user_id}`)
 		.returning();
-	return Response.json(res, { headers });
+
+	retArr.push(res[0]);
+
+	// if the todo is done, check if it has subtasks, and if so, mark them as done
+	if (done) {
+		let subtasks = await client.select().from(todos).where(sql`${todos.parent_id} = ${id}`);
+		if (subtasks.length > 0) {
+
+			let locRes = await client
+				.update(todos)
+				.set({
+					done: true,
+					updated_at: updated_at,
+				})
+				.where(sql`${todos.parent_id} = ${id}`)
+				.returning();
+
+			retArr.push(locRes[0]);
+		}
+	}
+
+	return Response.json(retArr, { headers });
 }
 
 /*
