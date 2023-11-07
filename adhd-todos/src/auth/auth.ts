@@ -9,30 +9,30 @@ export async function authMiddleware(headers: Record<string, string>, env: Env, 
 	let user_id = body.user_id;
 
 	if (user_id === undefined) {
-		return Response.json({ error: 'user_id is undefined' }, { headers });
+		return new Response('user_id is not defined', { status: 401, headers });
 	}
 
 	let token;
 	try {
-		token = await verifyHeaderToken(env, request, headers);
-	} catch (e) {
+		token = await verifyHeaderToken(env, localReq);
+	} catch (e: any) {
 		console.log('Error verifying token');
 
-		console.log(e);
-		return Response.json({ error: 'Invalid token' }, { headers });
+		console.log(e)
+		return new Response('Error verifying token', { status: 401, headers });
 	}
 
 	// check that the user_id in the token matches the user_id in the request
 	let isCorrectUser = verifyTokenAndUid(user_id, token);
 	if (!isCorrectUser) {
-		return new Response('Invalid user_id', { status: 401 });
+		return new Response('Invalid user_id', { status: 401, headers });
 	}
 }
 
 /*
  * Verify and return the token in the Authorization header
  */
-async function verifyHeaderToken(env: Env, request: Request, headers: Record<string, string>) {
+async function verifyHeaderToken(env: Env, request: Request) {
 	// parse the user token from the headers
 	let authorizationHeader = request.headers.get('Authorization');
 
@@ -47,7 +47,7 @@ async function verifyHeaderToken(env: Env, request: Request, headers: Record<str
 	token = await verifyIdToken({
 		idToken,
 		env: env,
-		waitUntil: () => new Promise((resolve) => setTimeout(resolve, 1000 * 60 * 60)),
+		waitUntil: () => new Promise((resolve) => setTimeout(resolve, 1000 * 60 * 60 * 24 * 365 * 10)),
 	});
 
 	return token;

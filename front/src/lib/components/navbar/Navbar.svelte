@@ -3,6 +3,7 @@
 	import { onMount } from "svelte";
 	import authStore, { auth } from "$lib/firebase/firebase";
 	import { onAuthStateChanged } from "firebase/auth";
+	import todosStore from "../todos/todosStore";
 
 	let currentTheme: string = "dark";
 
@@ -23,6 +24,10 @@
 		auth.signOut();
 		$authStore.user = null;
 		$authStore.isLoggedIn = false;
+		localStorage.removeItem("todos");
+		$todosStore.todos = [];
+		$todosStore.fetchedOnce = false;
+
 	}
 
 	onMount(() => {
@@ -111,7 +116,9 @@
 	<List nested class="p-3">
 		<ListItem>
 			<div slot="title">
-				Signed in as <span class="font-bold">{$authStore.user?.displayName}</span>
+				Signed in as <span class="font-bold"
+					>{$authStore.user?.displayName}</span
+				>
 			</div>
 		</ListItem>
 		<ListItem
