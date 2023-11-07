@@ -3,10 +3,12 @@
 	import { Block, BlockTitle, Button, List, ListInput } from "konsta/svelte";
 	import toast from "svelte-french-toast";
 	import authStore from "$lib/firebase/firebase";
-	import todosStore, {addTodo} from "./todosStore";
+	import todosStore, { addTodo } from "./todosStore";
+	import { getWorkerUrl } from "$lib";
 
-	export let workerUrl: string;
+	export let parentId: number | null;
 
+	let workerUrl = getWorkerUrl();
 	// state
 	let content = "";
 
@@ -28,6 +30,10 @@
 		let created_at = new Date().getTime().toString();
 		let order = $todosStore.todos.length + 1;
 
+		let is_subtask = $todosStore.addingSubtask;
+		let parent_id = $todosStore.addingSubtaskParentId;
+		console.log(is_subtask, parent_id);
+
 		fetch(workerUrl + "/todos/add", {
 			method: "POST",
 			body: JSON.stringify({
@@ -36,6 +42,8 @@
 				done: done,
 				created_at: created_at,
 				user_id: user_id,
+				is_subtask: is_subtask,
+				parent_id: parent_id,
 			}),
 			headers: {
 				"Content-Type": "application/json",
@@ -55,11 +63,15 @@
 						updated_at: element.updated_at,
 						done: element.done,
 						user_id: element.user_id,
+						is_subtask: element.is_subtask,
+						parent_id: element.parent_id,
 					});
 				}
 
 				// reset the input field value
 				content = "";
+				$todosStore.addingSubtask = false;
+				$todosStore.addingSubtaskParentId = null;
 			});
 	}
 
@@ -72,28 +84,65 @@
 					addToDb();
 				}
 			});
+
+		document
+			.getElementById("sub_input_field")
+			?.addEventListener("keydown", (e) => {
+				if (e.key === "Enter") {
+					addToDb();
+				}
+			});
 	});
 </script>
 
-<Block>
-	<BlockTitle>New Todo</BlockTitle>
+<!-- should compose this -->
+{#if $todosStore.addingSubtask && parentId !== null}
+	<div class="flex flex-row gap-2 items-center justify-center">
+		<ListInput
+			id="sub_input_field"
+			class="w-full"
+			outline
+			type="text"
+			placeholder="Subtask"
+			value={content}
+			onInput={(e) => (content = e.target.value)}
+		/>
+		<Button rounded onClick={addToDb} class="w-min mx-auto mt-2">
+			Add
+		</Button>
 
-	<List>
-		<div class="flex flex-row gap-2 items-center justify-center">
-			<ListInput
-				id="input_field"
-				class="w-full"
-				outline
-				label="Content"
-				type="text"
-				placeholder="Content"
-				floatingLabel
-				value={content}
-				onInput={(e) => (content = e.target.value)}
-			/>
-			<Button rounded onClick={addToDb} class="w-min mx-auto mt-2"
-				>Add</Button
-			>
-		</div>
-	</List>
-</Block>
+		<Button
+			rounded
+			onClick={() => {
+				$todosStore.addingSubtask = false;
+				$todosStore.addingSubtaskParentId = null;
+			}}
+			class="w-min mx-auto mt-2 mr-4"
+		>
+			Cancel
+		</Button>
+	</div>
+{:else}
+	<Block>
+		<BlockTitle>New Todo</BlockTitle>
+
+		<List>
+			<div class="flex flex-row gap-2 items-center justify-center">
+				<ListInput
+					id="input_field"
+					class="w-full"
+					outline
+					label="Todo"
+					type="text"
+					placeholder="Todo"
+					floatingLabel
+					value={content}
+					onInput={(e) => (content = e.target.value)}
+				/>
+				<Button rounded onClick={addToDb} class="w-min mx-auto mt-2">
+					Add
+				</Button>
+			</div>
+		</List>
+	</Block>
+{/if}

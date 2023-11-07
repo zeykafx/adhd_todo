@@ -27,7 +27,6 @@
 		localStorage.removeItem("todos");
 		$todosStore.todos = [];
 		$todosStore.fetchedOnce = false;
-
 	}
 
 	onMount(() => {
@@ -116,9 +115,9 @@
 	<List nested class="p-3">
 		<ListItem>
 			<div slot="title">
-				Signed in as <span class="font-bold"
-					>{$authStore.user?.displayName}</span
-				>
+				Signed in as <span class="font-bold">
+					{$authStore.user?.displayName}
+				</span>
 			</div>
 		</ListItem>
 		<ListItem

@@ -21,18 +21,18 @@
 	import TodoInput from "$lib/components/todos/TodoInput.svelte";
 	import clsx from "clsx";
 	import authStore from "$lib/firebase/firebase";
-	import todosStore, {type Todo, addTodo} from "./todosStore";
+	import todosStore, { type Todo, addTodo } from "./todosStore";
+	import TodoComponent from "./TodoComponent.svelte";
 
 	dayjs.extend(relativeTime);
 	let workerUrl = getWorkerUrl();
 
-	// state
+	// delete and edit todo state
 	let deleteAlertOpen = false;
 	let todoToDelete: Todo | null = null;
-
 	let editingTodo: Todo | null = null;
-	let editingTodoElem: HTMLElement | undefined;
 
+	// popover state
 	let popoverOpened = false;
 	let popoverTargetEl: string | HTMLElement | null = null;
 
@@ -40,7 +40,6 @@
 		popoverTargetEl = targetEl;
 		popoverOpened = true;
 	};
-
 
 	async function fetchDbContents() {
 		if ($todosStore.fetchedOnce) return;
@@ -70,6 +69,8 @@
 						updated_at: element.updated_at,
 						done: element.done,
 						user_id: element.user_id,
+						is_subtask: element.is_subtask,
+						parent_id: element.parent_id,
 					});
 				}
 
@@ -89,7 +90,9 @@
 			},
 		}).then(() => {
 			toast.success("Deleted Todo");
-			$todosStore.todos = $todosStore.todos.filter((todo) => todo.id !== id);
+			$todosStore.todos = $todosStore.todos.filter(
+				(todo) => todo.id !== id
+			);
 		});
 	}
 
@@ -159,7 +162,6 @@
 						return todo;
 					});
 				}
-
 			});
 	}
 
@@ -210,7 +212,7 @@
 	class="w-full flex flex-col items-center justify-center max-w-screen-lg mx-auto px-4"
 >
 	<div class="w-full">
-		<TodoInput {workerUrl} />
+		<TodoInput parentId={null} />
 
 		<Block>
 			<BlockTitle>Todo list</BlockTitle>
@@ -226,138 +228,14 @@
 					on:consider={handleDndConsider}
 					on:finalize={handleDndFinalize}
 				>
-					{#each $todosStore.todos as todo (todo.id)}
+					{#each $todosStore.todos.filter((t) => !t.is_subtask) as todo (todo.id)}
 						<div animate:flip={{ duration: flipDurationMs }}>
-							<ListItem
-								label={editingTodo !== todo}
-								class={clsx(
-									editingTodo === todo
-										? "border border-green-300 focus-within:border-green-500 rounded-xl cursor-text"
-										: ""
-								)}
-								titleWrapClass={todo.done
-									? "line-through text-black/50 dark:text-white/50"
-									: ""}
-							>
-								<div
-									slot="title"
-									role="textbox"
-									tabindex="0"
-									class={clsx(
-										editingTodo === todo
-											? "cursor-text"
-											: ""
-									)}
-									contenteditable={editingTodo === todo}
-									bind:this={editingTodoElem}
-									on:dblclick={() => {
-										editingTodo = todo;
-									}}
-									on:keypress={(e) => {
-										if (
-											e.code === "Enter" &&
-											editingTodoElem !== undefined
-										) {
-											editInDb(
-												todo.id,
-												todo.order,
-												editingTodoElem.innerText,
-												todo.done
-											);
-											editingTodo = null;
-										}
-									}}
-								>
-									{todo.content}
-								</div>
-								<div slot="text">
-									{dayjs(todo.created_at).fromNow()}
-								</div>
-								<Checkbox
-									slot="media"
-									component="div"
-									name="todo-done"
-									checked={todo.done}
-									onChange={() => {
-										let order = $todosStore.todos.findIndex(
-											(t) => t.id === todo.id
-										);
-										editInDb(
-											todo.id,
-											order,
-											todo.content,
-											!todo.done
-										);
-										return (todo.done = !todo.done);
-									}}
-								/>
-
-								<Button
-									class={"todo_" + todo.id.toString()}
-									slot="after"
-									clear
-									small
-									rounded
-									onClick={() => {
-										if (
-											editingTodo === todo &&
-											editingTodoElem !== undefined
-										) {
-											editInDb(
-												todo.id,
-												todo.order,
-												editingTodoElem.innerText,
-												todo.done
-											);
-											editingTodo = null;
-										} else {
-											openPopover(
-												".todo_" + todo.id.toString()
-											);
-										}
-									}}
-								>
-									{#if editingTodo === todo}
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											width="24"
-											height="24"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											class="lucide lucide-save"
-										>
-											<path
-												d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
-											/>
-											<polyline
-												points="17 21 17 13 7 13 7 21"
-											/>
-											<polyline points="7 3 7 8 15 8" />
-										</svg>
-									{:else}
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											width="24"
-											height="24"
-											viewBox="0 0 24 24"
-											fill="none"
-											stroke="currentColor"
-											stroke-width="2"
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											class="lucide lucide-more-vertical"
-										>
-											<circle cx="12" cy="12" r="1" />
-											<circle cx="12" cy="5" r="1" />
-											<circle cx="12" cy="19" r="1" />
-										</svg>
-									{/if}
-								</Button>
-							</ListItem>
+							<TodoComponent
+								{editingTodo}
+								{todo}
+								{openPopover}
+								{editInDb}
+							/>
 						</div>
 					{:else}
 						{#if $todosStore.loading || !$authStore.isLoggedIn}
@@ -409,6 +287,47 @@
 	onBackdropClick={() => (popoverOpened = false)}
 >
 	<List nested class="p-3">
+		<!-- ADD SUBTASK BUTTON -->
+		<ListItem
+			title="Add subtask"
+			link
+			chevron={false}
+			onClick={() => {
+				if (typeof popoverTargetEl === "string") {
+					let todoId = parseInt(
+						popoverTargetEl.replace(".todo_", "")
+					);
+					// let todo = $todosStore.todos.find(
+					// 	(todo) => todo.id === todoId
+					// );
+
+					$todosStore.addingSubtask = true;
+					$todosStore.addingSubtaskParentId = todoId;
+				}
+				return (popoverOpened = false);
+			}}
+		>
+			<div slot="after">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="24"
+					height="24"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="lucide lucide-plus-circle"
+				>
+					<circle cx="12" cy="12" r="10" />
+					<path d="M8 12h8" />
+					<path d="M12 8v8" />
+				</svg>
+			</div>
+		</ListItem>
+
+		<!-- EDIT TODO BUTTON -->
 		<ListItem
 			title="Edit Todo"
 			link
@@ -418,7 +337,9 @@
 					let todoId = parseInt(
 						popoverTargetEl.replace(".todo_", "")
 					);
-					let todo = $todosStore.todos.find((todo) => todo.id === todoId);
+					let todo = $todosStore.todos.find(
+						(todo) => todo.id === todoId
+					);
 
 					if (todo !== undefined) {
 						editingTodo = todo;
@@ -445,9 +366,12 @@
 				</svg>
 			</div>
 		</ListItem>
+
+		<!-- DELETE TODO BUTTON -->
 		<ListItem
 			title="Delete Todo"
 			link
+			class="bg-red-500/5 hover:bg-red-500/30 rounded-xl transition-all"
 			chevron={false}
 			onClick={() => {
 				if (typeof popoverTargetEl === "string") {
@@ -455,7 +379,9 @@
 						popoverTargetEl.replace(".todo_", "")
 					);
 					deleteAlertOpen = true;
-					let todo = $todosStore.todos.find((todo) => todo.id === todoId);
+					let todo = $todosStore.todos.find(
+						(todo) => todo.id === todoId
+					);
 					if (todo !== undefined) {
 						todoToDelete = todo;
 					}

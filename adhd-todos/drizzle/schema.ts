@@ -13,4 +13,6 @@ export let todos = sqliteTable("todos", {
 	created_at: text("created_at"),
 	updated_at: text("updated_at"),
 	user_id: text("user_id").notNull(),
+	is_subtask: integer("is_subtask", {mode: "boolean"}),
+	parent_id: integer("parent_id"),
 });

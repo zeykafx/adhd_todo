@@ -9,6 +9,8 @@ export interface Todo {
 	updated_at: Date;
 	done: boolean;
 	user_id: number;
+	is_subtask: boolean;
+	parent_id: number | null;
 }
 
 let localTodos = loadTodosFromLocalStorage();
@@ -16,10 +18,14 @@ let todosStore = writable<{
 	todos: Array<Todo>;
 	loading: boolean;
 	fetchedOnce: boolean;
+	addingSubtask: boolean;
+	addingSubtaskParentId: number | null;
 }>({
 	todos: localTodos,
 	loading: false,
 	fetchedOnce: false,
+	addingSubtask: false,
+	addingSubtaskParentId: null,
 });
 
 export default todosStore;
@@ -55,6 +61,8 @@ export function addTodo({
 	updated_at,
 	done,
 	user_id,
+	is_subtask,
+	parent_id,
 }: {
 	id: number;
 	order: number;
@@ -63,6 +71,8 @@ export function addTodo({
 	updated_at: string;
 	done: boolean;
 	user_id: number;
+	is_subtask: boolean;
+	parent_id: number | null;
 }) {
 	let created_at_date: Date = new Date(parseInt(created_at));
 	let updated_at_date: Date = new Date(parseInt(updated_at));
@@ -76,6 +86,8 @@ export function addTodo({
 			updated_at: updated_at_date,
 			done,
 			user_id,
+			is_subtask,
+			parent_id,
 		});
 		return store;
 	});

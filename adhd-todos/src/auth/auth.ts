@@ -3,7 +3,7 @@ let { verifyIdToken } = require('web-auth-library/google');
 // import {verifyIdToken, UserToken} from 'web-auth-library/dist/google';
 
 export async function authMiddleware(headers: Record<string, string>, env: Env, request: Request) {
-	let localReq = request.clone();
+	let localReq = request.clone(); // clone the request so we can use it twice
 
 	let body: any = await localReq.json();
 	let user_id = body.user_id;
