@@ -1,4 +1,5 @@
 import { Router, RouterType } from 'itty-router';
+import { authMiddleware } from './auth/auth';
 import { addTodo, deleteTodo, editOrder, editTodo, getTodos } from './todos/todos';
 
 export interface Env {
@@ -50,6 +51,8 @@ function buildRouter(env: Env): RouterType {
 				},
 			})
 	);
+
+	router.all('/todos/*', (request) => authMiddleware(headers, env, request));
 
 	router.post('/todos/get', (request) => getTodos(headers, env, request));
 

@@ -109,12 +109,11 @@
 	onBackdropClick={() => (popoverOpened = false)}
 >
 	<List nested class="p-3">
-		<ListItem
-			title={`Signed in as ${$authStore.user?.displayName}`}
-			onClick={() => {
-				return (popoverOpened = false);
-			}}
-		/>
+		<ListItem>
+			<div slot="title">
+				Signed in as <span class="font-bold">{$authStore.user?.displayName}</span>
+			</div>
+		</ListItem>
 		<ListItem
 			link
 			class="text-bold bg-red-500/5 hover:bg-red-500/30 rounded-xl transition-all"
@@ -137,9 +136,14 @@
 					stroke-linecap="round"
 					stroke-linejoin="round"
 					class="lucide lucide-log-out"
-					><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline
-						points="16 17 21 12 16 7"
-					/><line x1="21" x2="9" y1="12" y2="12" /></svg
+					><path
+						d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+					/><polyline points="16 17 21 12 16 7" /><line
+						x1="21"
+						x2="9"
+						y1="12"
+						y2="12"
+					/></svg
 				>
 			</div>
 		</ListItem>
