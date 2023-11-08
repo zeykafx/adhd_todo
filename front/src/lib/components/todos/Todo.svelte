@@ -88,14 +88,16 @@
 				"Content-Type": "application/json",
 				Authorization: "Bearer " + userToken,
 			},
-		}).then((res) => res.json()).then((res) => {
-			toast.success("Deleted Todo");
-			for (let element of res) {
-				$todosStore.todos = $todosStore.todos.filter(
-					(todo) => todo.id !== element.id
-				);
-			}
-		});
+		})
+			.then((res) => res.json())
+			.then((res) => {
+				toast.success("Deleted Todo");
+				for (let element of res) {
+					$todosStore.todos = $todosStore.todos.filter(
+						(todo) => todo.id !== element.id
+					);
+				}
+			});
 	}
 
 	async function editInDb(
@@ -230,14 +232,16 @@
 					on:consider={handleDndConsider}
 					on:finalize={handleDndFinalize}
 				>
-					{#each $todosStore.todos.filter((t) => !t.is_subtask) as todo (todo.id)}
+					{#each $todosStore.todos as todo (todo.id)}
 						<div animate:flip={{ duration: flipDurationMs }}>
-							<TodoComponent
-								{editingTodo}
-								{todo}
-								{openPopover}
-								{editInDb}
-							/>
+							{#if !todo.is_subtask}
+								<TodoComponent
+									{editingTodo}
+									{todo}
+									{openPopover}
+									{editInDb}
+								/>
+							{/if}
 						</div>
 					{:else}
 						{#if $todosStore.loading || !$authStore.isLoggedIn}
@@ -299,9 +303,14 @@
 					let todoId = parseInt(
 						popoverTargetEl.replace(".todo_", "")
 					);
-					// let todo = $todosStore.todos.find(
-					// 	(todo) => todo.id === todoId
-					// );
+					let todo = $todosStore.todos.find(
+						(todo) => todo.id === todoId
+					);
+
+					if (todo?.is_subtask) {
+						toast.error("Can't add subtask to subtask");
+						return (popoverOpened = false);
+					}
 
 					$todosStore.addingSubtask = true;
 					$todosStore.addingSubtaskParentId = todoId;

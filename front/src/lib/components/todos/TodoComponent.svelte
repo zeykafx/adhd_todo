@@ -16,6 +16,13 @@
 	) => void;
 
 	let editingTodoElem: HTMLElement | undefined;
+
+	$: {
+		if ($todosStore.addingSubtask && $todosStore.addingSubtaskParentId === todo.id && todo.is_subtask) {
+			$todosStore.addingSubtask = false;
+			$todosStore.addingSubtaskParentId = null;
+		}
+	}
 </script>
 
 <ListItem
