@@ -11,6 +11,7 @@ export interface Todo {
 	user_id: number;
 	is_subtask: boolean;
 	parent_id: number | null;
+	has_been_broken_down: boolean;
 }
 
 let localTodos = loadTodosFromLocalStorage();
@@ -64,6 +65,7 @@ export function addTodo({
 	user_id,
 	is_subtask,
 	parent_id,
+	has_been_broken_down
 }: {
 	id: number;
 	order: number;
@@ -74,6 +76,7 @@ export function addTodo({
 	user_id: number;
 	is_subtask: boolean;
 	parent_id: number | null;
+	has_been_broken_down: boolean;
 }) {
 	let created_at_date: Date = new Date(parseInt(created_at));
 	let updated_at_date: Date = new Date(parseInt(updated_at));
@@ -89,6 +92,7 @@ export function addTodo({
 			user_id,
 			is_subtask,
 			parent_id,
+			has_been_broken_down
 		});
 		return store;
 	});

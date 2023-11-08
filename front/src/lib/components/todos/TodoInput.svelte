@@ -64,6 +64,7 @@
 						user_id: element.user_id,
 						is_subtask: element.is_subtask,
 						parent_id: element.parent_id,
+						has_been_broken_down: element.has_been_broken_down,
 					});
 				}
 

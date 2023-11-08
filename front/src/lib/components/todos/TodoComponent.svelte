@@ -18,7 +18,11 @@
 	let editingTodoElem: HTMLElement | undefined;
 
 	$: {
-		if ($todosStore.addingSubtask && $todosStore.addingSubtaskParentId === todo.id && todo.is_subtask) {
+		if (
+			$todosStore.addingSubtask &&
+			$todosStore.addingSubtaskParentId === todo.id &&
+			todo.is_subtask
+		) {
 			$todosStore.addingSubtask = false;
 			$todosStore.addingSubtaskParentId = null;
 		}
@@ -26,7 +30,6 @@
 </script>
 
 <ListItem
-	label={editingTodo !== todo}
 	class={clsx(
 		editingTodo === todo
 			? "border border-green-300 focus-within:border-green-500 rounded-xl cursor-text"
@@ -66,9 +69,7 @@
 	</div>
 
 	<Checkbox
-		aria-label="drag-handle"
 		slot="media"
-		component="div"
 		name="todo-done"
 		checked={todo.done}
 		onChange={() => {
@@ -137,10 +138,15 @@
 		{/if}
 	</Button>
 
+	<!-- Subtasks -->
 	<div class="pl-7">
-		<!-- Subtasks -->
 		{#each $todosStore.todos.filter((t) => t.parent_id === todo.id && t.is_subtask) as subtask (subtask.id)}
-			<svelte:self {editingTodo} todo={subtask} {openPopover} {editInDb} />
+			<svelte:self
+				{editingTodo}
+				todo={subtask}
+				{openPopover}
+				{editInDb}
+			/>
 		{/each}
 
 		{#if $todosStore.addingSubtask && $todosStore.addingSubtaskParentId === todo.id}

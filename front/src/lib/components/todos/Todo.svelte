@@ -25,10 +25,11 @@
 	dayjs.extend(relativeTime);
 	let workerUrl = getWorkerUrl();
 
-	// delete and edit todo state
+	// delete, edit todo state
 	let deleteAlertOpen = false;
 	let todoToDelete: Todo | null = null;
 	let editingTodo: Todo | null = null;
+	// let todoToBreakdown: Todo | null = null;
 
 	// popover state
 	let popoverOpened = false;
@@ -85,6 +86,7 @@
 						user_id: element.user_id,
 						is_subtask: element.is_subtask,
 						parent_id: element.parent_id,
+						has_been_broken_down: element.has_been_broken_down,
 					});
 				}
 
@@ -183,6 +185,60 @@
 			});
 	}
 
+	async function breakdownTodo(todo: Todo) {
+		if (todo.has_been_broken_down) {
+			toast.error("Sorry, this todo has already been broken down, to save cost, I only allow breaking down a todo once. You can still duplicate it and break down the duplicate.", {
+				duration: 20000
+			});
+			return;
+		}
+
+		let userToken = await $authStore.user?.getIdToken();
+		let user_id = $authStore.user?.uid!;
+
+		fetch(workerUrl + "/ai/breakdown", {
+			method: "POST",
+			body: JSON.stringify({
+				message: todo.content,
+				user_id: user_id,
+				todo_id: todo.id,
+			}),
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: "Bearer " + userToken,
+			},
+		})
+			.then((res) => res.json())
+			.then((res) => {
+				console.log(res);
+				toast.success("Todo broken down!")
+				// set the todo as broken down
+				$todosStore.todos = $todosStore.todos.map((t) => {
+					if (t.id === todo.id) {
+						t.has_been_broken_down = true;
+					}
+					return t;
+				});
+
+				// add the subtasks
+				for (let element of res) {
+					addTodo({
+						id: element.id,
+						order: element.order,
+						content: element.content,
+						created_at: element.created_at,
+						updated_at: element.updated_at,
+						done: element.done,
+						user_id: element.user_id,
+						is_subtask: element.is_subtask,
+						parent_id: element.parent_id,
+						has_been_broken_down: element.has_been_broken_down,
+					});
+				}
+
+			});
+	}
+
 	// DND Stuff
 	let flipDurationMs = 300;
 	let dropTargetStyle = {
@@ -224,6 +280,8 @@
 
 		return () => clearInterval(interval);
 	});
+
+
 </script>
 
 <div
@@ -304,11 +362,59 @@
 <Popover
 	opened={popoverOpened}
 	target={popoverTargetEl}
-	onBackdropClick={() => (popoverOpened = false)}
+	onBackdropClick={() => (popoverOpened = false, popoverTargetEl = null)}
 >
 	<List nested class="p-3">
-		<!-- ADD SUBTASK BUTTON -->
+
 		{#if !popoverTargetIsSubtask}
+			<!-- Breakdown todo -->
+			<ListItem
+				title="Breakdown Todo using AI"
+				link
+				chevron={false}
+				onClick={() => {
+					if (typeof popoverTargetEl === "string") {
+						let todoId = parseInt(
+							popoverTargetEl.replace(".todo_", "")
+						);
+						let todo = $todosStore.todos.find(
+							(todo) => todo.id === todoId
+						);
+
+						// Shouldn't happen but we can check just in case
+						if (todo?.is_subtask) {
+							toast.error("Can't breakdown subtask");
+							return (popoverOpened = false, popoverTargetEl = null);
+						}
+
+						if (todo !== undefined) {
+							breakdownTodo(todo);
+						}
+					}
+					return (popoverOpened = false, popoverTargetEl = null);
+				}}
+			>
+				<div slot="after">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="24"
+						height="24"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="lucide lucide-plus-circle"
+					>
+						<circle cx="12" cy="12" r="10" />
+						<path d="M8 12h8" />
+						<path d="M12 8v8" />
+					</svg>
+				</div>
+			</ListItem>
+
+			<!-- ADD SUBTASK BUTTON -->
 			<ListItem
 				title="Add subtask"
 				link
@@ -331,7 +437,7 @@
 						$todosStore.addingSubtask = true;
 						$todosStore.addingSubtaskParentId = todoId;
 					}
-					return (popoverOpened = false);
+					return (popoverOpened = false, popoverTargetEl = null);
 				}}
 			>
 				<div slot="after">
@@ -373,7 +479,7 @@
 						editingTodo = todo;
 					}
 				}
-				return (popoverOpened = false);
+				return (popoverOpened = false, popoverTargetEl = null);
 			}}
 		>
 			<div slot="after">

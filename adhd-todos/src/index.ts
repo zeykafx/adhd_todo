@@ -1,6 +1,7 @@
 import { Router, RouterType } from 'itty-router';
 import { authMiddleware } from './auth/auth';
 import { addTodo, deleteTodo, editOrder, editTodo, getTodos } from './todos/todos';
+import { breakdownSubtasks, createOpenaiAPI } from './ai/ai';
 
 export interface Env {
 	// The environment variable containing the URL for your Turso database.
@@ -8,6 +9,7 @@ export interface Env {
 	// The Secret that contains the authentication token for your Turso database.
 	LIBSQL_DB_AUTH_TOKEN?: string;
 	GOOGLE_CLOUD_CREDENTIALS?: string;
+	OPENAI_API_KEY?: string;
 
 	// These objects are created before first use, then stashed here
 	// for future use
@@ -37,6 +39,7 @@ function buildRouter(env: Env): RouterType {
 	};
 
 	const router = Router();
+	let openai = createOpenaiAPI(env);
 
 	router.options(
 		'*',
@@ -62,6 +65,8 @@ function buildRouter(env: Env): RouterType {
 	router.put('/todos/editOrder', (request) => editOrder(headers, env, request));
 
 	router.delete('/todos/delete', (request) => deleteTodo(headers, env, request));
+
+	router.post("/ai/breakdown", (req) => breakdownSubtasks(req, headers, env, openai))
 
 	router.all('*', () => new Response('Not Found.', { status: 404 }));
 

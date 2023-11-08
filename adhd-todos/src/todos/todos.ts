@@ -13,6 +13,7 @@ interface Todo {
 	user_id: number;
 	is_subtask: boolean;
 	parent_id: number | null;
+	has_been_broken_down: boolean;
 }
 
 /*
