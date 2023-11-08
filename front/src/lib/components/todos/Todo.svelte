@@ -6,7 +6,6 @@
 		List,
 		BlockTitle,
 		ListItem,
-		Checkbox,
 		Dialog,
 		DialogButton,
 		Popover,
@@ -19,7 +18,6 @@
 	import { flip } from "svelte/animate";
 	import { dndzone, type DndEvent } from "svelte-dnd-action";
 	import TodoInput from "$lib/components/todos/TodoInput.svelte";
-	import clsx from "clsx";
 	import authStore from "$lib/firebase/firebase";
 	import todosStore, { type Todo, addTodo } from "./todosStore";
 	import TodoComponent from "./TodoComponent.svelte";
@@ -35,6 +33,22 @@
 	// popover state
 	let popoverOpened = false;
 	let popoverTargetEl: string | HTMLElement | null = null;
+
+	let popoverTargetIsSubtask = false;
+
+	// don't show the "add subtask" to subtasks
+	$: {
+		if (typeof popoverTargetEl === "string") {
+			let todoId = parseInt(popoverTargetEl.replace(".todo_", ""));
+			let todo = $todosStore.todos.find((todo) => todo.id === todoId);
+
+			if (todo?.is_subtask) {
+				popoverTargetIsSubtask = true;
+			} else {
+				popoverTargetIsSubtask = false;
+			}
+		}
+	}
 
 	const openPopover = (targetEl: string | HTMLElement) => {
 		popoverTargetEl = targetEl;
@@ -294,49 +308,52 @@
 >
 	<List nested class="p-3">
 		<!-- ADD SUBTASK BUTTON -->
-		<ListItem
-			title="Add subtask"
-			link
-			chevron={false}
-			onClick={() => {
-				if (typeof popoverTargetEl === "string") {
-					let todoId = parseInt(
-						popoverTargetEl.replace(".todo_", "")
-					);
-					let todo = $todosStore.todos.find(
-						(todo) => todo.id === todoId
-					);
+		{#if !popoverTargetIsSubtask}
+			<ListItem
+				title="Add subtask"
+				link
+				chevron={false}
+				onClick={() => {
+					if (typeof popoverTargetEl === "string") {
+						let todoId = parseInt(
+							popoverTargetEl.replace(".todo_", "")
+						);
+						let todo = $todosStore.todos.find(
+							(todo) => todo.id === todoId
+						);
 
-					if (todo?.is_subtask) {
-						toast.error("Can't add subtask to subtask");
-						return (popoverOpened = false);
+						// Shouldn't happen but we can check just in case
+						if (todo?.is_subtask) {
+							toast.error("Can't add subtask to subtask");
+							return (popoverOpened = false);
+						}
+
+						$todosStore.addingSubtask = true;
+						$todosStore.addingSubtaskParentId = todoId;
 					}
-
-					$todosStore.addingSubtask = true;
-					$todosStore.addingSubtaskParentId = todoId;
-				}
-				return (popoverOpened = false);
-			}}
-		>
-			<div slot="after">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="lucide lucide-plus-circle"
-				>
-					<circle cx="12" cy="12" r="10" />
-					<path d="M8 12h8" />
-					<path d="M12 8v8" />
-				</svg>
-			</div>
-		</ListItem>
+					return (popoverOpened = false);
+				}}
+			>
+				<div slot="after">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="24"
+						height="24"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="lucide lucide-plus-circle"
+					>
+						<circle cx="12" cy="12" r="10" />
+						<path d="M8 12h8" />
+						<path d="M12 8v8" />
+					</svg>
+				</div>
+			</ListItem>
+		{/if}
 
 		<!-- EDIT TODO BUTTON -->
 		<ListItem

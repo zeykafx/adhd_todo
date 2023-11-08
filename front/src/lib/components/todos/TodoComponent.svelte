@@ -140,7 +140,6 @@
 	<div class="pl-7">
 		<!-- Subtasks -->
 		{#each $todosStore.todos.filter((t) => t.parent_id === todo.id && t.is_subtask) as subtask (subtask.id)}
-			<!-- {subtask.content} -->
 			<svelte:self {editingTodo} todo={subtask} {openPopover} {editInDb} />
 		{/each}
 
@@ -148,10 +147,5 @@
 			<!-- subtask input -->
 			<TodoInput parentId={todo.id} />
 		{/if}
-		<!-- <ListItem link chevron={false}>
-			<Checkbox slot="media" />
-			<div slot="title">Created at</div>
-			<div slot="text">{dayjs(todo.created_at).fromNow()}</div>
-		</ListItem> -->
 	</div>
 </ListItem>

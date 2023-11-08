@@ -32,7 +32,6 @@
 
 		let is_subtask = $todosStore.addingSubtask;
 		let parent_id = $todosStore.addingSubtaskParentId;
-		console.log(is_subtask, parent_id);
 
 		fetch(workerUrl + "/todos/add", {
 			method: "POST",

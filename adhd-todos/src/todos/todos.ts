@@ -117,22 +117,22 @@ export async function editTodo(headers: Record<string, string>, env: Env, reques
 	retArr.push(res[0]);
 
 	// if the todo is done, check if it has subtasks, and if so, mark them as done
-	if (done) {
-		let subtasks = await client.select().from(todos).where(sql`${todos.parent_id} = ${id}`);
-		if (subtasks.length > 0) {
+	// if (done) {
+	// 	let subtasks = await client.select().from(todos).where(sql`${todos.parent_id} = ${id}`);
+	// 	if (subtasks.length > 0) {
 
-			let locRes = await client
-				.update(todos)
-				.set({
-					done: true,
-					updated_at: updated_at,
-				})
-				.where(sql`${todos.parent_id} = ${id}`)
-				.returning();
+	// 		let locRes = await client
+	// 			.update(todos)
+	// 			.set({
+	// 				done: true,
+	// 				updated_at: updated_at,
+	// 			})
+	// 			.where(sql`${todos.parent_id} = ${id}`)
+	// 			.returning();
 
-			retArr.push(locRes[0]);
-		}
-	}
+	// 		retArr.push(locRes[0]);
+	// 	}
+	// }
 
 	return Response.json(retArr, { headers });
 }

@@ -14,6 +14,7 @@ export interface Todo {
 }
 
 let localTodos = loadTodosFromLocalStorage();
+
 let todosStore = writable<{
 	todos: Array<Todo>;
 	loading: boolean;
