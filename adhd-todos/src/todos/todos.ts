@@ -82,7 +82,7 @@ export async function deleteTodo(headers: Record<string, string>, env: Env, requ
 	if (subtasks.length > 0) {
 		// delete all the subtasks
 		let locRes = await client.delete(todos).where(sql`${todos.parent_id} = ${id}`).returning();
-		retArr.push(locRes[0]);
+		locRes.forEach((r) => retArr.push(r));
 	}
 
 	return Response.json(retArr, { headers });

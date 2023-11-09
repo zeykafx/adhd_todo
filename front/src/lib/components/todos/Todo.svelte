@@ -187,11 +187,16 @@
 
 	async function breakdownTodo(todo: Todo) {
 		if (todo.has_been_broken_down) {
-			toast.error("Sorry, this todo has already been broken down, to save cost, I only allow breaking down a todo once. You can still duplicate it and break down the duplicate.", {
-				duration: 20000
-			});
+			toast.error(
+				"Sorry, this todo has already been broken down, to save cost, I only allow breaking down a todo once. You can still duplicate it and break down the duplicate.",
+				{
+					duration: 20000,
+				}
+			);
 			return;
 		}
+
+		$todosStore.loadingAITodo = todo.id;
 
 		let userToken = await $authStore.user?.getIdToken();
 		let user_id = $authStore.user?.uid!;
@@ -210,8 +215,8 @@
 		})
 			.then((res) => res.json())
 			.then((res) => {
-				console.log(res);
-				toast.success("Todo broken down!")
+				toast.success("Todo broken down!");
+
 				// set the todo as broken down
 				$todosStore.todos = $todosStore.todos.map((t) => {
 					if (t.id === todo.id) {
@@ -235,7 +240,7 @@
 						has_been_broken_down: element.has_been_broken_down,
 					});
 				}
-
+				$todosStore.loadingAITodo = null;
 			});
 	}
 
@@ -280,8 +285,6 @@
 
 		return () => clearInterval(interval);
 	});
-
-
 </script>
 
 <div
@@ -362,57 +365,68 @@
 <Popover
 	opened={popoverOpened}
 	target={popoverTargetEl}
-	onBackdropClick={() => (popoverOpened = false, popoverTargetEl = null)}
+	onBackdropClick={() => ((popoverOpened = false), (popoverTargetEl = null))}
 >
 	<List nested class="p-3">
-
 		{#if !popoverTargetIsSubtask}
 			<!-- Breakdown todo -->
-			<ListItem
-				title="Breakdown Todo using AI"
-				link
-				chevron={false}
-				onClick={() => {
-					if (typeof popoverTargetEl === "string") {
-						let todoId = parseInt(
-							popoverTargetEl.replace(".todo_", "")
-						);
-						let todo = $todosStore.todos.find(
-							(todo) => todo.id === todoId
-						);
 
-						// Shouldn't happen but we can check just in case
-						if (todo?.is_subtask) {
-							toast.error("Can't breakdown subtask");
-							return (popoverOpened = false, popoverTargetEl = null);
-						}
-
-						if (todo !== undefined) {
-							breakdownTodo(todo);
-						}
-					}
-					return (popoverOpened = false, popoverTargetEl = null);
-				}}
+			<div
+				class="hover:animate-background rounded-xl bg-gradient-to-r from-green-300 via-blue-500 to-purple-600 p-0.5 transition hover:bg-[length:400%_400%] hover:[animation-duration:_4s]"
 			>
-				<div slot="after">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="24"
-						height="24"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						class="lucide lucide-plus-circle"
-					>
-						<circle cx="12" cy="12" r="10" />
-						<path d="M8 12h8" />
-						<path d="M12 8v8" />
-					</svg>
-				</div>
-			</ListItem>
+				<ListItem
+					title="Breakdown using AI"
+					link
+					class="rounded-xl bg-md-light-surface-3 dark:bg-md-dark-surface-3"
+					chevron={false}
+					onClick={() => {
+						if (typeof popoverTargetEl === "string") {
+							let todoId = parseInt(
+								popoverTargetEl.replace(".todo_", "")
+							);
+							let todo = $todosStore.todos.find(
+								(todo) => todo.id === todoId
+							);
+
+							// Shouldn't happen but we can check just in case
+							if (todo?.is_subtask) {
+								toast.error("Can't breakdown subtask");
+								return (
+									(popoverOpened = false),
+									(popoverTargetEl = null)
+								);
+							}
+
+							if (todo !== undefined) {
+								breakdownTodo(todo);
+							}
+						}
+						return (
+							(popoverOpened = false), (popoverTargetEl = null)
+						);
+					}}
+				>
+					<div slot="after">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							class="lucide lucide-sparkles"
+							><path
+								d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"
+							/><path d="M5 3v4" /><path d="M19 17v4" /><path
+								d="M3 5h4"
+							/><path d="M17 19h4" /></svg
+						>
+					</div>
+				</ListItem>
+			</div>
 
 			<!-- ADD SUBTASK BUTTON -->
 			<ListItem
@@ -437,7 +451,7 @@
 						$todosStore.addingSubtask = true;
 						$todosStore.addingSubtaskParentId = todoId;
 					}
-					return (popoverOpened = false, popoverTargetEl = null);
+					return (popoverOpened = false), (popoverTargetEl = null);
 				}}
 			>
 				<div slot="after">
@@ -479,7 +493,7 @@
 						editingTodo = todo;
 					}
 				}
-				return (popoverOpened = false, popoverTargetEl = null);
+				return (popoverOpened = false), (popoverTargetEl = null);
 			}}
 		>
 			<div slot="after">

@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { Env } from '..';
 import buildLibsqlClient from '../db';
 import { todos } from '../../drizzle/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export function createOpenaiAPI(env: Env) {
 	return new OpenAI({
@@ -11,7 +11,7 @@ export function createOpenaiAPI(env: Env) {
 }
 
 let prompt =
-	"Given a user submitted task, break it down into a list of subtasks that can be completed sequentially to achieve the overall goal, limit of 5 subtasks. Output the subtasks in a json format with the key 'subtasks' that contains a list of the subtasks.";
+	"Given a user submitted task, break it down into a list of subtasks that can be completed sequentially to achieve the overall goal, answer with 1 to 6 subtasks depending on the context. Output the subtasks in a json format with the key 'subtasks' that contains a list of the subtasks.";
 
 export async function breakdownSubtasks(request: Request, headers: Record<string, string>, env: Env, openai: OpenAI) {
 	const client = buildLibsqlClient(env);
@@ -23,7 +23,7 @@ export async function breakdownSubtasks(request: Request, headers: Record<string
 	// check if the todo has already been broken down
 	const rs = await client.select().from(todos).where(eq(todos.id, todo_id));
 	if (rs[0].has_been_broken_down) {
-		return new Response('user_id is not defined', { status: 401, headers });
+		return new Response('Todo has already been broken down', { status: 401, headers });
 	}
 
 	// get the subtasks from gpt3
@@ -45,6 +45,10 @@ export async function breakdownSubtasks(request: Request, headers: Record<string
 
 	// parse the subtasks from the response
 	let subtasks = chatCompletion.choices[0].message.content;
+	if (subtasks === undefined) {
+		return new Response('Failed to parse subtasks', { status: 401, headers });
+	}
+
 	let subtasksJson = JSON.parse(subtasks!);
 
 	// update the parent todo to indicate that it has been broken down

@@ -22,12 +22,14 @@ let todosStore = writable<{
 	fetchedOnce: boolean;
 	addingSubtask: boolean;
 	addingSubtaskParentId: number | null;
+	loadingAITodo: number | null;
 }>({
 	todos: localTodos,
 	loading: false,
 	fetchedOnce: false,
 	addingSubtask: false,
 	addingSubtaskParentId: null,
+	loadingAITodo: null,
 });
 
 export default todosStore;
