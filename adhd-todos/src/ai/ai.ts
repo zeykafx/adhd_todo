@@ -18,8 +18,6 @@ export async function breakdownSubtasks(request: Request, headers: Record<string
 
 	const { user_id, message, todo_id } = (await request.json()) as { user_id: string; message: string; todo_id: number };
 
-	// check in the database that the user_id is valid
-
 	// check if the todo has already been broken down
 	const rs = await client.select().from(todos).where(eq(todos.id, todo_id));
 	if (rs[0].has_been_broken_down) {

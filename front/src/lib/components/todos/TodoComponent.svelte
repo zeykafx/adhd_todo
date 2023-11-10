@@ -32,6 +32,7 @@
 
 <ListItem
 	class={clsx(
+		"w-full",
 		editingTodo === todo
 			? "border border-green-300 focus-within:border-green-500 rounded-xl cursor-text"
 			: ""

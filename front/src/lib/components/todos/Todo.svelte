@@ -21,6 +21,7 @@
 	import authStore from "$lib/firebase/firebase";
 	import todosStore, { type Todo, addTodo } from "./todosStore";
 	import TodoComponent from "./TodoComponent.svelte";
+	import clsx from "clsx";
 
 	dayjs.extend(relativeTime);
 	let workerUrl = getWorkerUrl();
@@ -249,14 +250,21 @@
 	let dropTargetStyle = {
 		"border-color": "rgb(var(--k-color-md-dark-primary))",
 	};
+	let dragDisabled = true;
+
+	function startDrag(e: any) {
+		e.preventDefault();
+		dragDisabled = false;
+	}
 
 	function handleDndConsider(e: CustomEvent<DndEvent<Todo>>) {
 		$todosStore.todos = e.detail.items;
+		dragDisabled = true;
 	}
 
 	function handleDndFinalize(e: CustomEvent<DndEvent<Todo>>) {
 		$todosStore.todos = e.detail.items;
-
+		dragDisabled = true;
 		editOrder();
 	}
 
@@ -302,14 +310,55 @@
 					use:dndzone={{
 						items: $todosStore.todos,
 						flipDurationMs,
+						dragDisabled,
 						dropTargetStyle,
 					}}
 					on:consider={handleDndConsider}
 					on:finalize={handleDndFinalize}
 				>
 					{#each $todosStore.todos as todo (todo.id)}
-						<div animate:flip={{ duration: flipDurationMs }}>
+						<div
+							animate:flip={{ duration: flipDurationMs }}
+							class="flex flex-row gap-0.5 items-baseline justify-start"
+						>
 							{#if !todo.is_subtask}
+								<!-- svelte-ignore a11y-no-static-element-interactions -->
+								<div
+									class={clsx(
+										"pl-4 w-min text-md-light-primary dark:text-md-dark-primary",
+										dragDisabled
+											? "cursor-grab"
+											: "cursor-grabbing"
+									)}
+									on:mousedown={startDrag}
+									on:touchstart={startDrag}
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="24"
+										height="24"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										class="lucide lucide-grip-vertical"
+										><circle cx="9" cy="12" r="1" /><circle
+											cx="9"
+											cy="5"
+											r="1"
+										/><circle cx="9" cy="19" r="1" /><circle
+											cx="15"
+											cy="12"
+											r="1"
+										/><circle cx="15" cy="5" r="1" /><circle
+											cx="15"
+											cy="19"
+											r="1"
+										/></svg
+									>
+								</div>
 								<TodoComponent
 									{editingTodo}
 									{todo}
