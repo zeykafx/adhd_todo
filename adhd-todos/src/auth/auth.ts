@@ -1,3 +1,5 @@
+import { users } from '../../drizzle/schema';
+import buildLibsqlClient from '../db';
 import { Env } from '../index';
 let { verifyIdToken } = require('web-auth-library/google');
 // import {verifyIdToken, UserToken} from 'web-auth-library/dist/google';
@@ -27,6 +29,28 @@ export async function authMiddleware(headers: Record<string, string>, env: Env, 
 	if (!isCorrectUser) {
 		return new Response('Invalid user_id', { status: 401, headers });
 	}
+}
+
+/*
+ * handles the create new user request
+ */
+export async function createNewUser(headers: Record<string, string>, env: Env, request: Request) {
+	const client = buildLibsqlClient(env);
+
+	const { id, displayName, email } = (await request.json()) as { id: string, email: string, displayName: string };
+
+	await client
+		.insert(users)
+		.values({
+			id: id,
+			username: displayName,
+			email: email,
+			has_limit: true,
+			last_time_broke_down: '',
+			number_of_breakdowns_today: 0,
+		});
+
+	return new Response("OK", { status: 200, headers: headers });
 }
 
 /*

@@ -145,7 +145,7 @@
 		{#if $todosStore.loadingAITodo === todo.id}
 			<div
 				transition:fade
-				class="m-1 p-0.5 animate-background rounded-xl bg-gradient-to-r from-green-300 via-blue-500 to-purple-600 transition bg-[length:400%_400%] [animation-duration:_4s]"
+				class="m-1 p-0.25 animate-background rounded-xl bg-gradient-to-r from-green-300 via-blue-500 to-purple-600 transition bg-[length:400%_400%] [animation-duration:_4s]"
 			>
 				<ListItem
 					title="Loading AI subtasks..."

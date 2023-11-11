@@ -7,6 +7,7 @@
     "dev": "wrangler dev",
     "start": "wrangler dev",
     "generate": "drizzle-kit generate:sqlite --out ./drizzle/migrations --breakpoints --schema=./drizzle/schema.ts",
+    "push": "tsx drizzle-kit push:sqlite",
     "migrate": "tsx drizzle/migrate",
     "studio": "drizzle-kit studio --port 3333"
   },
@@ -20,6 +21,7 @@
   },
   "dependencies": {
     "@libsql/client": "^0.3.6",
+    "better-sqlite3": "^9.1.1",
     "drizzle-orm": "^0.28.6",
     "itty-router": "^4.0.23",
     "openai": "^4.16.2",

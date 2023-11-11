@@ -1,5 +1,5 @@
 import { Router, RouterType } from 'itty-router';
-import { authMiddleware } from './auth/auth';
+import { authMiddleware, createNewUser } from './auth/auth';
 import { addTodo, deleteTodo, editOrder, editTodo, getTodos } from './todos/todos';
 import { breakdownSubtasks, createOpenaiAPI } from './ai/ai';
 
@@ -55,18 +55,19 @@ function buildRouter(env: Env): RouterType {
 			})
 	);
 
+	// To-dos routes
 	router.all('/todos/*', (request) => authMiddleware(headers, env, request));
-
 	router.post('/todos/get', (request) => getTodos(headers, env, request));
-
 	router.post('/todos/add', (request) => addTodo(headers, env, request));
-
 	router.put('/todos/edit', (request) => editTodo(headers, env, request));
 	router.put('/todos/editOrder', (request) => editOrder(headers, env, request));
-
 	router.delete('/todos/delete', (request) => deleteTodo(headers, env, request));
 
+	// AI routes
 	router.post("/ai/breakdown", (req) => breakdownSubtasks(req, headers, env, openai))
+
+	// Users routes
+	router.post("/auth/create", (req) => createNewUser(headers, env, req));
 
 	router.all('*', () => new Response('Not Found.', { status: 404 }));
 

@@ -1,11 +1,18 @@
 <script lang="ts">
 	import Navbar from "$lib/components/navbar/Navbar.svelte";
 	import { auth } from "$lib/firebase/firebase";
-	import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+	import {
+		GoogleAuthProvider,
+		getAdditionalUserInfo,
+		signInWithPopup,
+	} from "firebase/auth";
 	import { Block, BlockTitle, Button, Page } from "konsta/svelte";
 	import toast from "svelte-french-toast";
 	import authStore from "$lib/firebase/firebase";
 	import { goto } from "$app/navigation";
+	import { getWorkerUrl } from "$lib";
+
+	let workerUrl = getWorkerUrl();
 
 	async function signInWithGoogle() {
 		console.log("sign in with google");
@@ -14,6 +21,29 @@
 
 		signInWithPopup(auth, provider)
 			.then((result) => {
+				let addInfo = getAdditionalUserInfo(result);
+				console.log(addInfo?.isNewUser);
+				if (addInfo !== null && addInfo.isNewUser) {
+					// make a request to the backend to create a new user in the db
+					fetch(workerUrl + "/auth/create", {
+						method: "POST",
+						body: JSON.stringify({
+							id: result.user.uid,
+							email: result.user.email,
+							displayName: result.user.displayName,
+						}),
+						headers: {
+							"Content-Type": "application/json",
+						},
+					})
+						.then((data) => {
+							console.log(data);
+						})
+						.catch((err) => {
+							console.log(err);
+						});
+				}
+
 				// The signed-in user info.
 				const user = result.user;
 

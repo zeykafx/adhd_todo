@@ -216,6 +216,14 @@
 		})
 			.then((res) => res.json())
 			.then((res) => {
+				if (res.error !== undefined) {
+					toast.error(res.error, {
+						duration: 20000,
+					});
+					$todosStore.loadingAITodo = null;
+					return;
+				}
+
 				toast.success("Todo broken down!");
 
 				// set the todo as broken down
@@ -241,6 +249,11 @@
 						has_been_broken_down: element.has_been_broken_down,
 					});
 				}
+				$todosStore.loadingAITodo = null;
+			})
+			.catch((e) => {
+				console.log(e);
+				toast.error("Error breaking down todo");
 				$todosStore.loadingAITodo = null;
 			});
 	}
@@ -322,6 +335,7 @@
 							class="flex flex-row gap-0.5 items-baseline justify-start"
 						>
 							{#if !todo.is_subtask}
+								<!-- Drag handle -->
 								<!-- svelte-ignore a11y-no-static-element-interactions -->
 								<div
 									class={clsx(
@@ -336,14 +350,14 @@
 									<svg
 										xmlns="http://www.w3.org/2000/svg"
 										width="24"
-										height="24"
+										height="22"
 										viewBox="0 0 24 24"
 										fill="none"
 										stroke="currentColor"
 										stroke-width="2"
 										stroke-linecap="round"
 										stroke-linejoin="round"
-										class="lucide lucide-grip-vertical"
+										class="pt-1 lucide lucide-grip-vertical"
 										><circle cx="9" cy="12" r="1" /><circle
 											cx="9"
 											cy="5"
@@ -419,9 +433,8 @@
 	<List nested class="p-3">
 		{#if !popoverTargetIsSubtask}
 			<!-- Breakdown todo -->
-
 			<div
-				class="hover:animate-background rounded-xl bg-gradient-to-r from-green-300 via-blue-500 to-purple-600 p-0.5 transition hover:bg-[length:400%_400%] hover:[animation-duration:_4s]"
+				class="animate-background rounded-xl bg-gradient-to-r from-green-300 via-blue-500 to-purple-600 p-0.25 transition bg-[length:400%_400%] [animation-duration:_4s]"
 			>
 				<ListItem
 					title="Breakdown using AI"

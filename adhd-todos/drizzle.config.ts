@@ -10,4 +10,5 @@ export default {
         url: process.env.LIBSQL_DB_URL as string,
         authToken: process.env.LIBSQL_DB_AUTH_TOKEN as string,
     },
+    verbose: true,
 } satisfies Config;
