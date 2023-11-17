@@ -2,7 +2,6 @@
 	import toast from "svelte-french-toast";
 	import {
 		Block,
-		Button,
 		List,
 		BlockTitle,
 		ListItem,
@@ -11,15 +10,15 @@
 		Popover,
 		Preloader,
 	} from "konsta/svelte";
-	import { onMount } from "svelte";
-	import { getWorkerUrl } from "$lib";
+	import {onMount} from "svelte";
+	import {getWorkerUrl} from "$lib";
 	import dayjs from "dayjs";
 	import relativeTime from "dayjs/plugin/relativeTime";
-	import { flip } from "svelte/animate";
-	import { dndzone, type DndEvent } from "svelte-dnd-action";
+	import {flip} from "svelte/animate";
+	import {dndzone, type DndEvent} from "svelte-dnd-action";
 	import TodoInput from "$lib/components/todos/TodoInput.svelte";
 	import authStore from "$lib/firebase/firebase";
-	import todosStore, { type Todo, addTodo } from "./todosStore";
+	import todosStore, {type Todo, addTodo} from "./todosStore";
 	import TodoComponent from "./TodoComponent.svelte";
 	import clsx from "clsx";
 
@@ -30,7 +29,6 @@
 	let deleteAlertOpen = false;
 	let todoToDelete: Todo | null = null;
 	let editingTodo: Todo | null = null;
-	// let todoToBreakdown: Todo | null = null;
 
 	// popover state
 	let popoverOpened = false;
@@ -53,8 +51,10 @@
 	}
 
 	const openPopover = (targetEl: string | HTMLElement) => {
+		// console.log("opening popover", targetEl)
 		popoverTargetEl = targetEl;
 		popoverOpened = true;
+		// console.log("popover target el", popoverTargetEl)
 	};
 
 	async function fetchDbContents() {
@@ -66,7 +66,7 @@
 
 		fetch(workerUrl + "/todos/get", {
 			method: "POST",
-			body: JSON.stringify({ user_id: $authStore.user?.uid! }),
+			body: JSON.stringify({user_id: $authStore.user?.uid!}),
 			headers: {
 				"Content-Type": "application/json",
 				Authorization: "Bearer " + userToken,
@@ -100,7 +100,7 @@
 
 		fetch(workerUrl + "/todos/delete", {
 			method: "DELETE",
-			body: JSON.stringify({ id: id, user_id: $authStore.user?.uid! }),
+			body: JSON.stringify({id: id, user_id: $authStore.user?.uid!}),
 			headers: {
 				"Content-Type": "application/json",
 				Authorization: "Bearer " + userToken,
@@ -312,7 +312,7 @@
 	class="w-full flex flex-col items-center justify-center max-w-screen-lg mx-auto px-4"
 >
 	<div class="w-full">
-		<TodoInput parentId={null} />
+		<TodoInput parentId={null}/>
 
 		<Block>
 			<BlockTitle>Todo list</BlockTitle>
@@ -358,19 +358,26 @@
 										stroke-linecap="round"
 										stroke-linejoin="round"
 										class="pt-1 lucide lucide-grip-vertical"
-										><circle cx="9" cy="12" r="1" /><circle
+									>
+										<circle cx="9" cy="12" r="1"/>
+										<circle
 											cx="9"
 											cy="5"
 											r="1"
-										/><circle cx="9" cy="19" r="1" /><circle
+										/>
+										<circle cx="9" cy="19" r="1"/>
+										<circle
 											cx="15"
 											cy="12"
 											r="1"
-										/><circle cx="15" cy="5" r="1" /><circle
+										/>
+										<circle cx="15" cy="5" r="1"/>
+										<circle
 											cx="15"
 											cy="19"
 											r="1"
-										/></svg
+										/>
+									</svg
 									>
 								</div>
 								<TodoComponent
@@ -386,11 +393,11 @@
 							<div
 								class="flex flex-col items-center justify-center p-10"
 							>
-								<Preloader />
-								<ListItem title="Loading..." />
+								<Preloader/>
+								<ListItem title="Loading..."/>
 							</div>
 						{:else}
-							<ListItem title="Nothing to do!" />
+							<ListItem title="Nothing to do!"/>
 						{/if}
 					{/each}
 				</section>
@@ -404,9 +411,7 @@
 	onBackdropClick={() => (deleteAlertOpen = false)}
 >
 	<svelte:fragment slot="title">Delete Todo</svelte:fragment>
-
 	Are you sure you want to delete this todo?
-
 	<svelte:fragment slot="buttons">
 		<DialogButton onClick={() => (deleteAlertOpen = false)}>
 			Cancel
@@ -428,18 +433,21 @@
 <Popover
 	opened={popoverOpened}
 	target={popoverTargetEl}
-	onBackdropClick={() => ((popoverOpened = false), (popoverTargetEl = null))}
+	onBackdropClick={() => {
+		popoverTargetEl = null;
+		popoverOpened = false;
+	}}
 >
 	<List nested class="p-3">
 		{#if !popoverTargetIsSubtask}
 			<!-- Breakdown todo -->
 			<div
-				class="animate-background rounded-xl bg-gradient-to-r from-green-300 via-blue-500 to-purple-600 p-0.25 transition bg-[length:400%_400%] [animation-duration:_4s]"
+				class="animate-background rounded-xl bg-gradient-to-r from-green-300 via-blue-500 to-purple-600 p-0.5 transition bg-[length:400%_400%] [animation-duration:_4s]"
 			>
 				<ListItem
 					title="Breakdown using AI"
 					link
-					class="rounded-xl bg-md-light-surface-3 dark:bg-md-dark-surface-3"
+					class="rounded-xl bg-md-light-surface-3/95 dark:bg-md-dark-surface-3/80"
 					chevron={false}
 					onClick={() => {
 						if (typeof popoverTargetEl === "string") {
@@ -495,6 +503,7 @@
 				title="Add subtask"
 				link
 				chevron={false}
+				class="hover:bg-md-light-outline/10 dark:hover:bg-md-dark-outline/10 rounded-xl transition-all"
 				onClick={() => {
 					if (typeof popoverTargetEl === "string") {
 						let todoId = parseInt(
@@ -541,6 +550,7 @@
 		<ListItem
 			title="Edit Todo"
 			link
+			class="hover:bg-md-light-outline/10 dark:hover:bg-md-dark-outline/10 rounded-xl transition-all"
 			chevron={false}
 			onClick={() => {
 				if (typeof popoverTargetEl === "string") {
@@ -596,7 +606,7 @@
 						todoToDelete = todo;
 					}
 				}
-				return (popoverOpened = false);
+				return (popoverOpened = false), (popoverTargetEl = null);
 			}}
 		>
 			<div slot="after">

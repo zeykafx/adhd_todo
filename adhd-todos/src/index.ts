@@ -56,7 +56,7 @@ function buildRouter(env: Env): RouterType {
 	);
 
 	// To-dos routes
-	router.all('/todos/*', (request) => authMiddleware(headers, env, request));
+	router.all('/todos/*', (request) => authMiddleware(headers, env, request)); // auth middleware
 	router.post('/todos/get', (request) => getTodos(headers, env, request));
 	router.post('/todos/add', (request) => addTodo(headers, env, request));
 	router.put('/todos/edit', (request) => editTodo(headers, env, request));
@@ -64,6 +64,7 @@ function buildRouter(env: Env): RouterType {
 	router.delete('/todos/delete', (request) => deleteTodo(headers, env, request));
 
 	// AI routes
+	router.all('/ai/*', (request) => authMiddleware(headers, env, request)); // auth middleware
 	router.post("/ai/breakdown", (req) => breakdownSubtasks(req, headers, env, openai))
 
 	// Users routes
