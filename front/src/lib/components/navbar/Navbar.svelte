@@ -2,7 +2,7 @@
 	import { Navbar, Button, List, ListItem, Popover } from "konsta/svelte";
 	import { onMount } from "svelte";
 	import authStore, { auth } from "$lib/firebase/firebase";
-	import { onAuthStateChanged } from "firebase/auth";
+	import { getIdToken, onAuthStateChanged } from "firebase/auth";
 	import todosStore from "../todos/todosStore";
 
 	let currentTheme: string = "dark";
@@ -38,6 +38,12 @@
 		onAuthStateChanged(
 			auth,
 			(user) => {
+				if (user === null) {
+					return;
+				}
+				getIdToken(user!, true).then((token) => {
+					console.log(token);
+				});
 				$authStore.user = user;
 				$authStore.isLoggedIn = user !== null;
 			},

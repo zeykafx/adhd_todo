@@ -23,5 +23,7 @@
 <Page>
 	<Navbar />
 
-	<Todo />
+	{#if $authStore.isLoggedIn}
+		<Todo />
+	{/if}
 </Page>

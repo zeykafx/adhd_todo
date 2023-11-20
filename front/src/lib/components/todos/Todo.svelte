@@ -17,10 +17,11 @@
 	import {flip} from "svelte/animate";
 	import {dndzone, type DndEvent} from "svelte-dnd-action";
 	import TodoInput from "$lib/components/todos/TodoInput.svelte";
-	import authStore from "$lib/firebase/firebase";
+	import authStore, { auth } from "$lib/firebase/firebase";
 	import todosStore, {type Todo, addTodo} from "./todosStore";
 	import TodoComponent from "./TodoComponent.svelte";
 	import clsx from "clsx";
+	import { signOut } from "firebase/auth";
 
 	dayjs.extend(relativeTime);
 	let workerUrl = getWorkerUrl();
@@ -74,6 +75,15 @@
 		})
 			.then((res) => res.json())
 			.then((res) => {
+				if (res.error !== undefined) {
+					toast.error(res.error);
+					$todosStore.loading = false;
+					$authStore.isLoggedIn = false;
+					$authStore.user = null;
+					auth.signOut();
+					return;
+				}
+
 				$todosStore.todos = [];
 
 				for (let element of res) {
@@ -91,6 +101,10 @@
 					});
 				}
 
+				$todosStore.loading = false;
+			}).catch((e) => {
+				console.log(e);
+				toast.error("Error fetching todos");
 				$todosStore.loading = false;
 			});
 	}

@@ -21,7 +21,7 @@ export async function authMiddleware(headers: Record<string, string>, env: Env, 
 		console.log('Error verifying token');
 
 		console.log(e)
-		return new Response('Error verifying token', { status: 401, headers });
+		return Response.json({error: 'Error verifying token'}, { status: 401, headers });
 	}
 
 	// check that the user_id in the token matches the user_id in the request
