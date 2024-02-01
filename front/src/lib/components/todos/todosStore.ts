@@ -10,6 +10,8 @@ export interface Todo {
 	done: boolean;
 	user_id: number;
 	is_subtask: boolean;
+	has_subtasks: boolean;
+	subtasks_hidden: boolean;
 	parent_id: number | null;
 	has_been_broken_down: boolean;
 }
@@ -66,6 +68,7 @@ export function addTodo({
 	done,
 	user_id,
 	is_subtask,
+	has_subtasks,
 	parent_id,
 	has_been_broken_down
 }: {
@@ -77,6 +80,7 @@ export function addTodo({
 	done: boolean;
 	user_id: number;
 	is_subtask: boolean;
+	has_subtasks: boolean;
 	parent_id: number | null;
 	has_been_broken_down: boolean;
 }) {
@@ -93,6 +97,8 @@ export function addTodo({
 			done,
 			user_id,
 			is_subtask,
+			has_subtasks,
+			subtasks_hidden: false,
 			parent_id,
 			has_been_broken_down
 		});

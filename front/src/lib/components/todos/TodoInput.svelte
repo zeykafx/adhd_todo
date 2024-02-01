@@ -63,9 +63,20 @@
 						done: element.done,
 						user_id: element.user_id,
 						is_subtask: element.is_subtask,
+						has_subtasks: element.has_subtasks,
 						parent_id: element.parent_id,
 						has_been_broken_down: element.has_been_broken_down,
 					});
+				}
+
+				// update the 'has_subtasks' property of the parent todo
+				if (parent_id !== null) {
+					let parentTodo = $todosStore.todos.find(
+						(t) => t.id === parent_id,
+					);
+					if (parentTodo !== undefined) {
+						parentTodo.has_subtasks = true;
+					}
 				}
 
 				// reset the input field value

@@ -9,16 +9,17 @@
 		DialogButton,
 		Popover,
 		Preloader,
+		Button,
 	} from "konsta/svelte";
-	import {onMount} from "svelte";
-	import {getWorkerUrl} from "$lib";
+	import { onMount } from "svelte";
+	import { getWorkerUrl } from "$lib";
 	import dayjs from "dayjs";
 	import relativeTime from "dayjs/plugin/relativeTime";
-	import {flip} from "svelte/animate";
-	import {dndzone, type DndEvent} from "svelte-dnd-action";
+	import { flip } from "svelte/animate";
+	import { dndzone, type DndEvent } from "svelte-dnd-action";
 	import TodoInput from "$lib/components/todos/TodoInput.svelte";
 	import authStore, { auth } from "$lib/firebase/firebase";
-	import todosStore, {type Todo, addTodo} from "./todosStore";
+	import todosStore, { type Todo, addTodo } from "./todosStore";
 	import TodoComponent from "./TodoComponent.svelte";
 	import clsx from "clsx";
 	import { signOut } from "firebase/auth";
@@ -36,8 +37,9 @@
 	let popoverTargetEl: string | HTMLElement | null = null;
 
 	let popoverTargetIsSubtask = false;
+	let popoverTargetHasSubtasks = false;
 
-	// don't show the "add subtask" to subtasks
+	// don't show the "add subtask" to subtasks, and also don't show the "clear subtasks" to todos that don't have subtasks
 	$: {
 		if (typeof popoverTargetEl === "string") {
 			let todoId = parseInt(popoverTargetEl.replace(".todo_", ""));
@@ -47,6 +49,14 @@
 				popoverTargetIsSubtask = true;
 			} else {
 				popoverTargetIsSubtask = false;
+				let subtasks = $todosStore.todos.filter(
+					(todo) => todo.parent_id === todoId,
+				);
+				if (subtasks.length > 0) {
+					popoverTargetHasSubtasks = true;
+				} else {
+					popoverTargetHasSubtasks = false;
+				}
 			}
 		}
 	}
@@ -67,7 +77,7 @@
 
 		fetch(workerUrl + "/todos/get", {
 			method: "POST",
-			body: JSON.stringify({user_id: $authStore.user?.uid!}),
+			body: JSON.stringify({ user_id: $authStore.user?.uid! }),
 			headers: {
 				"Content-Type": "application/json",
 				Authorization: "Bearer " + userToken,
@@ -96,13 +106,15 @@
 						done: element.done,
 						user_id: element.user_id,
 						is_subtask: element.is_subtask,
+						has_subtasks: element.has_subtasks,
 						parent_id: element.parent_id,
 						has_been_broken_down: element.has_been_broken_down,
 					});
 				}
 
 				$todosStore.loading = false;
-			}).catch((e) => {
+			})
+			.catch((e) => {
 				console.log(e);
 				toast.error("Error fetching todos");
 				$todosStore.loading = false;
@@ -114,7 +126,7 @@
 
 		fetch(workerUrl + "/todos/delete", {
 			method: "DELETE",
-			body: JSON.stringify({id: id, user_id: $authStore.user?.uid!}),
+			body: JSON.stringify({ id: id, user_id: $authStore.user?.uid! }),
 			headers: {
 				"Content-Type": "application/json",
 				Authorization: "Bearer " + userToken,
@@ -125,9 +137,11 @@
 				toast.success("Deleted Todo");
 				for (let element of res) {
 					$todosStore.todos = $todosStore.todos.filter(
-						(todo) => todo.id !== element.id
+						(todo) => todo.id !== element.id,
 					);
 				}
+
+
 			});
 	}
 
@@ -135,7 +149,7 @@
 		id: number,
 		order: number,
 		content: string,
-		done: boolean
+		done: boolean,
 	) {
 		let updated_at = new Date().getTime().toString();
 		let userToken = await $authStore.user?.getIdToken();
@@ -206,7 +220,7 @@
 				"Sorry, this todo has already been broken down, to save cost, I only allow breaking down a todo once. You can still duplicate it and break down the duplicate.",
 				{
 					duration: 20000,
-				}
+				},
 			);
 			return;
 		}
@@ -259,6 +273,7 @@
 						done: element.done,
 						user_id: element.user_id,
 						is_subtask: element.is_subtask,
+						has_subtasks: element.has_subtasks,
 						parent_id: element.parent_id,
 						has_been_broken_down: element.has_been_broken_down,
 					});
@@ -269,6 +284,33 @@
 				console.log(e);
 				toast.error("Error breaking down todo");
 				$todosStore.loadingAITodo = null;
+			});
+	}
+
+	async function clearSubtasks(todo: Todo) {
+		let userToken = await $authStore.user?.getIdToken();
+
+		fetch(workerUrl + "/todos/clearsubtasks", {
+			method: "PUT",
+			body: JSON.stringify({
+				todo: todo,
+				user_id: $authStore.user?.uid!,
+			}),
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: "Bearer " + userToken,
+			},
+		})
+			.then((res) => res.json())
+			.then((res) => {
+				// toast.success("Edited to do");
+
+				//  remove the todos that got cleared
+				for (let element of res) {
+					$todosStore.todos = $todosStore.todos.filter(
+						(todo) => todo.id !== element.id,
+					);
+				}
 			});
 	}
 
@@ -326,7 +368,7 @@
 	class="w-full flex flex-col items-center justify-center max-w-screen-lg mx-auto px-4"
 >
 	<div class="w-full">
-		<TodoInput parentId={null}/>
+		<TodoInput parentId={null} />
 
 		<Block>
 			<BlockTitle>Todo list</BlockTitle>
@@ -349,50 +391,79 @@
 							class="flex flex-row gap-0.5 items-baseline justify-start"
 						>
 							{#if !todo.is_subtask}
-								<!-- Drag handle -->
-								<!-- svelte-ignore a11y-no-static-element-interactions -->
-								<div
-									class={clsx(
-										"pl-4 w-min text-md-light-primary dark:text-md-dark-primary",
-										dragDisabled
-											? "cursor-grab"
-											: "cursor-grabbing"
-									)}
-									on:mousedown={startDrag}
-									on:touchstart={startDrag}
-								>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										width="24"
-										height="22"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										class="pt-1 lucide lucide-grip-vertical"
+								<div class="flex flex-col">
+									<!-- Drag handle -->
+									<!-- svelte-ignore a11y-no-static-element-interactions -->
+									<div
+										class={clsx(
+											"pl-4 w-min text-md-light-primary dark:text-md-dark-primary",
+											dragDisabled
+												? "cursor-grab"
+												: "cursor-grabbing",
+										)}
+										on:mousedown={startDrag}
+										on:touchstart={startDrag}
 									>
-										<circle cx="9" cy="12" r="1"/>
-										<circle
-											cx="9"
-											cy="5"
-											r="1"
-										/>
-										<circle cx="9" cy="19" r="1"/>
-										<circle
-											cx="15"
-											cy="12"
-											r="1"
-										/>
-										<circle cx="15" cy="5" r="1"/>
-										<circle
-											cx="15"
-											cy="19"
-											r="1"
-										/>
-									</svg
-									>
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="24"
+											height="22"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											class="pt-1 lucide lucide-grip-vertical"
+										>
+											<circle cx="9" cy="12" r="1" />
+											<circle cx="9" cy="5" r="1" />
+											<circle cx="9" cy="19" r="1" />
+											<circle cx="15" cy="12" r="1" />
+											<circle cx="15" cy="5" r="1" />
+											<circle cx="15" cy="19" r="1" />
+										</svg>
+									</div>
+
+									{#if todo.has_subtasks}
+										<div class="shrink pt-3">
+											<Button
+												clear
+												small
+												rounded
+												onClick={() => {
+													// set "subtasks_hidden" to false
+													$todosStore.todos = $todosStore.todos.map(
+														(t) => {
+															if (
+																t.id ===
+																todo.id
+															) {
+																t.subtasks_hidden = !t.subtasks_hidden;
+															}
+															return t;
+														},
+													);
+												}}
+											>
+												<svg
+													xmlns="http://www.w3.org/2000/svg"
+													width="24"
+													height="24"
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													stroke-width="2"
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													class={clsx("lucide lucide-chevron-up transition", todo.subtasks_hidden ? "rotate-180" : "rotate-0")}
+												>
+													<polyline points="18 15 12 9 6 15" />
+												</svg>
+											</Button>
+										</div>
+									{/if}
+
 								</div>
 								<TodoComponent
 									{editingTodo}
@@ -407,11 +478,11 @@
 							<div
 								class="flex flex-col items-center justify-center p-10"
 							>
-								<Preloader/>
-								<ListItem title="Loading..."/>
+								<Preloader />
+								<ListItem title="Loading..." />
 							</div>
 						{:else}
-							<ListItem title="Nothing to do!"/>
+							<ListItem title="Nothing to do!" />
 						{/if}
 					{/each}
 				</section>
@@ -466,10 +537,10 @@
 					onClick={() => {
 						if (typeof popoverTargetEl === "string") {
 							let todoId = parseInt(
-								popoverTargetEl.replace(".todo_", "")
+								popoverTargetEl.replace(".todo_", ""),
 							);
 							let todo = $todosStore.todos.find(
-								(todo) => todo.id === todoId
+								(todo) => todo.id === todoId,
 							);
 
 							// Shouldn't happen but we can check just in case
@@ -521,10 +592,10 @@
 				onClick={() => {
 					if (typeof popoverTargetEl === "string") {
 						let todoId = parseInt(
-							popoverTargetEl.replace(".todo_", "")
+							popoverTargetEl.replace(".todo_", ""),
 						);
 						let todo = $todosStore.todos.find(
-							(todo) => todo.id === todoId
+							(todo) => todo.id === todoId,
 						);
 
 						// Shouldn't happen but we can check just in case
@@ -569,10 +640,10 @@
 			onClick={() => {
 				if (typeof popoverTargetEl === "string") {
 					let todoId = parseInt(
-						popoverTargetEl.replace(".todo_", "")
+						popoverTargetEl.replace(".todo_", ""),
 					);
 					let todo = $todosStore.todos.find(
-						(todo) => todo.id === todoId
+						(todo) => todo.id === todoId,
 					);
 
 					if (todo !== undefined) {
@@ -601,6 +672,48 @@
 			</div>
 		</ListItem>
 
+		<!-- CLEAR SUBTASKS BUTTON -->
+		{#if popoverTargetHasSubtasks && !popoverTargetIsSubtask}
+			<ListItem
+				title="Clear subtasks"
+				link
+				class="bg-red-500/5 hover:bg-red-500/30 rounded-xl transition-all"
+				chevron={false}
+				onClick={() => {
+					if (typeof popoverTargetEl === "string") {
+						let todoId = parseInt(
+							popoverTargetEl.replace(".todo_", ""),
+						);
+						let todo = $todosStore.todos.find(
+							(todo) => todo.id === todoId,
+						);
+						if (todo !== undefined) {
+							clearSubtasks(todo);
+						}
+					}
+					return (popoverOpened = false), (popoverTargetEl = null);
+				}}
+			>
+				<div slot="after">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="24"
+						height="24"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="lucide lucide-list-minus"
+						><path d="M11 12H3" /><path d="M16 6H3" /><path
+							d="M16 18H3"
+						/><path d="M21 12h-6" /></svg
+					>
+				</div>
+			</ListItem>
+		{/if}
+
 		<!-- DELETE TODO BUTTON -->
 		<ListItem
 			title="Delete Todo"
@@ -610,11 +723,11 @@
 			onClick={() => {
 				if (typeof popoverTargetEl === "string") {
 					let todoId = parseInt(
-						popoverTargetEl.replace(".todo_", "")
+						popoverTargetEl.replace(".todo_", ""),
 					);
 					deleteAlertOpen = true;
 					let todo = $todosStore.todos.find(
-						(todo) => todo.id === todoId
+						(todo) => todo.id === todoId,
 					);
 					if (todo !== undefined) {
 						todoToDelete = todo;

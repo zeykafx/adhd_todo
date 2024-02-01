@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button, ListItem, Checkbox, List } from "konsta/svelte";
+	import { Button, ListItem, Checkbox } from "konsta/svelte";
 	import dayjs from "dayjs";
 	import clsx from "clsx";
 	import todosStore, { type Todo } from "./todosStore";
@@ -13,7 +13,7 @@
 		id: number,
 		order: number,
 		content: string,
-		done: boolean
+		done: boolean,
 	) => void;
 
 	let editingTodoElem: HTMLElement | undefined;
@@ -35,7 +35,7 @@
 		"w-full",
 		editingTodo === todo
 			? "border border-green-300 focus-within:border-green-500 rounded-xl cursor-text"
-			: ""
+			: "",
 	)}
 	titleWrapClass={todo.done
 		? "line-through text-black/50 dark:text-white/50"
@@ -57,7 +57,7 @@
 					todo.id,
 					todo.order,
 					editingTodoElem.innerText,
-					todo.done
+					todo.done,
 				);
 				editingTodo = null;
 			}
@@ -93,7 +93,7 @@
 					todo.id,
 					todo.order,
 					editingTodoElem.innerText,
-					todo.done
+					todo.done,
 				);
 				editingTodo = null;
 			} else {
@@ -155,16 +155,18 @@
 			</div>
 		{/if}
 
-		{#each $todosStore.todos.filter((t) => t.parent_id === todo.id && t.is_subtask) as subtask (subtask.id)}
-			<div transition:fade>
-				<svelte:self
-					{editingTodo}
-					todo={subtask}
-					{openPopover}
-					{editInDb}
-				/>
-			</div>
-		{/each}
+		{#if !todo.subtasks_hidden}
+			{#each $todosStore.todos.filter((t) => t.parent_id === todo.id && t.is_subtask) as subtask (subtask.id)}
+				<div transition:fade class="grow">
+					<svelte:self
+						{editingTodo}
+						todo={subtask}
+						{openPopover}
+						{editInDb}
+					/>
+				</div>
+			{/each}
+		{/if}
 
 		{#if $todosStore.addingSubtask && $todosStore.addingSubtaskParentId === todo.id}
 			<!-- subtask input -->

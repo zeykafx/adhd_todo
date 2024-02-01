@@ -1,6 +1,6 @@
 import { Router, RouterType } from 'itty-router';
 import { authMiddleware, createNewUser } from './auth/auth';
-import { addTodo, deleteTodo, editOrder, editTodo, getTodos } from './todos/todos';
+import { addTodo, clearSubtasks, deleteTodo, editOrder, editTodo, getTodos } from './todos/todos';
 import { breakdownSubtasks, createOpenaiAPI } from './ai/ai';
 
 export interface Env {
@@ -61,6 +61,7 @@ function buildRouter(env: Env): RouterType {
 	router.post('/todos/add', (request) => addTodo(headers, env, request));
 	router.put('/todos/edit', (request) => editTodo(headers, env, request));
 	router.put('/todos/editOrder', (request) => editOrder(headers, env, request));
+	router.put('/todos/clearsubtasks', (request) => clearSubtasks(headers, env, request));
 	router.delete('/todos/delete', (request) => deleteTodo(headers, env, request));
 
 	// AI routes
