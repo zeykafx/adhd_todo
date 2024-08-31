@@ -14,7 +14,6 @@ let PROMPT =
 	"Given a user submitted task, break it down into a list of subtasks that can be completed sequentially to achieve the overall goal, answer with 1 to 6 subtasks depending on the context. Output the subtasks in a json format with the key 'subtasks' that contains a list of the subtasks.";
 let BREAKDOWN_LIMIT = 20;
 
-
 export async function breakdownSubtasks(request: Request, headers: Record<string, string>, env: Env, openai: OpenAI) {
 	const client = buildLibsqlClient(env);
 
@@ -46,13 +45,13 @@ export async function breakdownSubtasks(request: Request, headers: Record<string
 
 	// if the user has reached their breakdown limit, return an error
 	if (breakdownsToday >= BREAKDOWN_LIMIT && rsUser[0]?.has_limit! && compare < 86400000) {
-		return Response.json({error: 'Out of AI uses today'}, { status: 401, headers });
+		return Response.json({ error: 'Out of AI uses today' }, { status: 401, headers });
 	}
 
 	// check if the todo has already been broken down
 	const rs = await client.select().from(todos).where(eq(todos.id, todo_id));
 	if (rs[0].has_been_broken_down) {
-		return Response.json({error: 'Todo has already been broken down'}, { status: 401, headers });
+		return Response.json({ error: 'Todo has already been broken down' }, { status: 401, headers });
 	}
 
 	// get the subtasks from gpt3
@@ -67,7 +66,7 @@ export async function breakdownSubtasks(request: Request, headers: Record<string
 				content: message,
 			},
 		],
-		model: 'gpt-3.5-turbo-1106',
+		model: 'gpt-4o-mini',
 		response_format: { type: 'json_object' },
 		stream: false,
 	});
@@ -75,7 +74,7 @@ export async function breakdownSubtasks(request: Request, headers: Record<string
 	// parse the subtasks from the response
 	let subtasks = chatCompletion.choices[0].message.content;
 	if (subtasks === undefined) {
-		return Response.json({error: 'Failed to parse subtasks'}, { status: 401, headers });
+		return Response.json({ error: 'Failed to parse subtasks' }, { status: 401, headers });
 	}
 
 	let subtasksJson = JSON.parse(subtasks!);
